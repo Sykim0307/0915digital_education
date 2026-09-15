@@ -1,0 +1,58 @@
+-- 봉투장부: Supabase에서 실행할 초기 스키마 + 현재 로컬 데이터 이관용 시드
+-- Supabase 대시보드 > SQL Editor 에 이 파일 내용을 그대로 붙여넣고 실행하세요.
+
+create table if not exists app_data (
+  id text primary key,
+  payload jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+-- 서버(service_role 키)만 접근하고, 공개 API(anon/authenticated)로는 아예 노출되지 않도록 잠급니다.
+-- service_role은 RLS를 항상 우회하므로 우리 server.js 동작에는 영향이 없어요.
+alter table app_data enable row level security;
+
+-- 지금 로컬 data.json에 있는 실제 데이터를 그대로 이관합니다.
+insert into app_data (id, payload)
+values ('main', $json$
+{
+  "entries": [
+    {"person":"임승민","date":"2026-09-15","eventType":"결혼","direction":"gave","amount":50000,"closeness":3,"isMutual":false,"reaction":"3","memo":"장례식 방문","createdAt":1789457463662,"id":"de4c5a7a-ec7b-43f8-9ec8-c65c7ea1c1ce"},
+    {"id":"mock1","person":"오정화","date":"2025-11-02","eventType":"결혼","direction":"gave","amount":100000,"closeness":4,"isMutual":true,"reaction":null,"memo":"모바일 청첩장","createdAt":1730505600000},
+    {"id":"mock2","person":"오정화","date":"2026-03-15","eventType":"돌잔치","direction":"received","amount":50000,"closeness":4,"isMutual":true,"reaction":null,"memo":"","createdAt":1742016000000},
+    {"id":"mock3","person":"나정민","date":"2025-09-20","eventType":"부고","direction":"gave","amount":70000,"closeness":3,"isMutual":false,"reaction":null,"memo":"빈소 방문","createdAt":1726790400000},
+    {"id":"mock4","person":"나정민","date":"2026-01-10","eventType":"개업","direction":"received","amount":30000,"closeness":3,"isMutual":false,"reaction":null,"memo":"","createdAt":1736467200000},
+    {"id":"mock5","person":"조혜인","date":"2025-12-24","eventType":"결혼","direction":"received","amount":100000,"closeness":5,"isMutual":true,"reaction":null,"memo":"축가 불러줌","createdAt":1735689600000},
+    {"id":"mock6","person":"조혜인","date":"2026-05-05","eventType":"돌잔치","direction":"gave","amount":50000,"closeness":5,"isMutual":true,"reaction":null,"memo":"","createdAt":1746403200000},
+    {"id":"mock7","person":"조민우","date":"2026-02-14","eventType":"생일","direction":"gave","amount":30000,"closeness":2,"isMutual":false,"reaction":null,"memo":"","createdAt":1739491200000},
+    {"id":"mock8","person":"조민우","date":"2026-06-01","eventType":"개업","direction":"gave","amount":50000,"closeness":2,"isMutual":false,"reaction":null,"memo":"화환 대신 현금","createdAt":1748736000000},
+    {"id":"mock9","person":"김성윤","date":"2025-08-30","eventType":"결혼","direction":"gave","amount":70000,"closeness":3,"isMutual":false,"reaction":null,"memo":"","createdAt":1725004800000},
+    {"id":"mock10","person":"김성윤","date":"2026-04-18","eventType":"부고","direction":"received","amount":50000,"closeness":3,"isMutual":false,"reaction":null,"memo":"","createdAt":1745193600000},
+    {"id":"mock11","person":"임승민","date":"2026-07-07","eventType":"돌잔치","direction":"received","amount":50000,"closeness":4,"isMutual":true,"reaction":null,"memo":"베이비페어에서 만남","createdAt":1751846400000},
+    {"id":"mock12","person":"임승민","date":"2026-08-22","eventType":"결혼","direction":"gave","amount":100000,"closeness":4,"isMutual":true,"reaction":null,"memo":"","createdAt":1755820800000}
+  ],
+  "gifts": [
+    {"person":"나정민","direction":"received","name":"두쫀쿠 상품권","tier":"실속형","date":"2026-09-15","expiry":"2027-10-05","used":false,"reaction":"3","memo":"생일 축하 선물","createdAt":1789457401923,"id":"00b0924a-b513-45ee-801f-91da68fc2608"},
+    {"id":"gift1","person":"오정화","direction":"received","name":"스타벅스 아메리카노 Tall","tier":"실속형","date":"2026-08-01","expiry":"2026-09-20","used":false,"reaction":"3","memo":"","createdAt":1754006400000},
+    {"id":"gift2","person":"오정화","direction":"gave","name":"배스킨라빈스 파인트","tier":"실속형","date":"2026-08-10","expiry":null,"used":false,"reaction":null,"memo":"","createdAt":1754784000000},
+    {"id":"gift3","person":"나정민","direction":"received","name":"교촌치킨 필수 세트","tier":"중가","date":"2026-07-15","expiry":"2026-10-01","used":true,"reaction":null,"memo":"","createdAt":1752537600000},
+    {"id":"gift4","person":"조혜인","direction":"received","name":"백화점 상품권 5만원","tier":"고가","date":"2026-06-20","expiry":"2026-09-18","used":false,"reaction":"3","memo":"","createdAt":1750377600000},
+    {"id":"gift5","person":"조혜인","direction":"gave","name":"스타벅스 아메리카노","tier":"실속형","date":"2026-06-25","expiry":null,"used":false,"reaction":null,"memo":"","createdAt":1750809600000},
+    {"id":"gift6","person":"조민우","direction":"gave","name":"교촌치킨 세트","tier":"중가","date":"2026-05-05","expiry":null,"used":false,"reaction":"1","memo":"","createdAt":1746403200000},
+    {"id":"gift7","person":"조민우","direction":"received","name":"메가커피 아메리카노","tier":"실속형","date":"2026-05-10","expiry":"2026-11-01","used":false,"reaction":null,"memo":"","createdAt":1746835200000},
+    {"id":"gift8","person":"김성윤","direction":"received","name":"호텔 뷔페 이용권","tier":"고가","date":"2026-04-01","expiry":"2026-09-30","used":false,"reaction":"2","memo":"","createdAt":1743465600000},
+    {"id":"gift9","person":"김성윤","direction":"gave","name":"던킨스타 아이스크림 상품권","tier":"실속형","date":"2026-04-05","expiry":null,"used":false,"reaction":null,"memo":"","createdAt":1743811200000},
+    {"id":"gift10","person":"임승민","direction":"received","name":"피자헛 프리미엄 세트","tier":"중가","date":"2026-08-20","expiry":"2026-09-25","used":false,"reaction":"3","memo":"","createdAt":1755648000000},
+    {"id":"gift11","person":"임승민","direction":"gave","name":"익스로 케이크 기프티콘","tier":"중가","date":"2026-08-25","expiry":null,"used":false,"reaction":null,"memo":"","createdAt":1756080000000}
+  ],
+  "people": [
+    {"id":"person1","name":"오정화","age":"29","anniversary":"09-20","workplace":"그린테크 마케팅팀","personality":"활발하고 커피를 좋아함, 감성적인 선물 선호","recentIssue":"최근 이사함"},
+    {"id":"person2","name":"조혜인","age":"27","anniversary":"10-05","workplace":"프리랜서 디자이너","personality":"감각적이고 브랜드 선호도가 높음","recentIssue":"개인전 준비 중"},
+    {"id":"person3","name":"나정민","age":"31","anniversary":"11-03","workplace":"서울병원 간호사","personality":"차분하고 실용적인 선물 선호","recentIssue":"최근 승진함"},
+    {"id":"person4","name":"조민우","age":"34","anniversary":"12-01","workplace":"제조업 영업팀","personality":"무뚝뚝하지만 의리 있음, 실속형 선호","recentIssue":"둘째 출산 예정"},
+    {"id":"person5","name":"김성윤","age":"26","anniversary":"09-28","workplace":"스타트업 개발자","personality":"미니멀리스트, 커피/디저트 좋아함","recentIssue":"최근 이직함"},
+    {"id":"person6","name":"임승민","age":"30","anniversary":"01-15","workplace":"공기업 재무팀","personality":"가족 중심적, 아이 용품에 관심 많음","recentIssue":"첫째 돌 지남"}
+  ],
+  "recommendations": []
+}
+$json$::jsonb)
+on conflict (id) do update set payload = excluded.payload, updated_at = now();

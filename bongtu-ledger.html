@@ -109,6 +109,19 @@
   .status.live .dot{background:var(--blue);}
   .status.local .dot{background:var(--red);}
   .status.server .dot{background:var(--tier-basic);}
+  .status.gauth .dot{background:var(--tier-mid);}
+
+  .headerRight{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+  .authbox{display:flex; align-items:center; gap:8px;}
+  .authbox .g-login-btn{
+    display:flex; align-items:center; gap:8px; font-size:.82rem; font-weight:600;
+    background:var(--paper-raised); border:1px solid var(--line-strong); border-radius:20px;
+    padding:6px 14px 6px 6px; cursor:pointer; color:var(--ink);
+  }
+  .authbox .g-login-btn .g-icon{width:18px; height:18px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; font-family:'Noto Sans KR',sans-serif; font-weight:700; font-size:.72rem; color:#4285F4; flex:none;}
+  .authbox .g-user{display:flex; align-items:center; gap:8px; font-size:.8rem; color:var(--ink-soft);}
+  .authbox .g-user strong{color:var(--ink);}
+  .authbox .g-logout-btn{background:none; border:none; color:var(--ink-faint); font-size:.76rem; text-decoration:underline; cursor:pointer;}
 
   nav.tabs{
     display:flex; gap:4px; margin:18px 0 22px; overflow-x:auto;
@@ -310,7 +323,10 @@
       <h1>봉투장부</h1>
       <span class="tag">경조사비, 잊지 않고 오래 가는 관계로</span>
     </div>
-    <div class="status" id="statusIndicator"><span class="dot"></span><span id="statusText">연결 확인 중…</span></div>
+    <div class="headerRight">
+      <div class="authbox" id="authBox" hidden></div>
+      <div class="status" id="statusIndicator"><span class="dot"></span><span id="statusText">연결 확인 중…</span></div>
+    </div>
   </header>
 
   <nav class="tabs" role="tablist">
@@ -755,6 +771,18 @@
         </div>
         <div class="ai-box" id="importStatus" hidden></div>
       </div>
+      <div class="m-item">
+        <h3>Google 로그인 (내 계정으로 어디서든 접속)</h3>
+        <p>Google로 로그인하면 이 계정 전용 데이터가 Supabase에 저장돼서, 로컬 서버 없이도 어느 기기·브라우저에서든 로그인만 하면 같은 기록을 볼 수 있어요. 로그인하지 않으면 기존처럼 로컬 파일/브라우저 저장소를 사용해요.</p>
+        <ol>
+          <li>Google Cloud Console에서 OAuth 클라이언트 ID 생성 (승인된 리디렉션 URI에 <code>https://프로젝트ref.supabase.co/auth/v1/callback</code> 추가)</li>
+          <li>Supabase 대시보드 → Authentication → Providers → Google 활성화, 위 클라이언트 ID/Secret 입력</li>
+          <li>Supabase 대시보드 → Authentication → URL Configuration → Redirect URLs에 <code>http://localhost:5173</code> 추가</li>
+          <li><code>supabase/schema_users.sql</code>을 SQL Editor에서 실행 (로그인 사용자별 테이블 생성)</li>
+          <li><code>bongtu-ledger.html</code> 안의 <code>SUPABASE_ANON_KEY</code> 값을 Supabase 대시보드 Settings → API의 anon(public) 키로 교체</li>
+        </ol>
+        <p>설정 전에는 화면 오른쪽 위에 로그인 버튼이 아예 보이지 않아요.</p>
+      </div>
     </div>
   </section>
 
@@ -766,6 +794,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 (function(){
   var db = null;
@@ -785,6 +814,115 @@
   var CLOSENESS_MULT = {1:0.6,2:0.8,3:1.0,4:1.2,5:1.5};
   var TIER_WEIGHT = {'실속형':1,'중가':2,'고가':3};
   var GIFT_TIER_VALUE = {'실속형':10000,'중가':30000,'고가':70000};
+
+  // ---------- Google 로그인 (Supabase Auth) ----------
+  var SUPABASE_URL = 'https://yuxtiibyfntyiccokplt.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1eHRpaWJ5Zm50eWljY29rcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NTYyMzUsImV4cCI6MjEwNTAzMjIzNX0.-c-mr5t83HcGP1obNlHKGcZ3UzJOHYKTUJexjieHBj8';
+  var sbClient = null;
+  var currentUser = null;
+  var supabaseConfigured = SUPABASE_URL.indexOf('YOUR_') !== 0 && SUPABASE_ANON_KEY.indexOf('YOUR_') !== 0;
+  if(supabaseConfigured && window.supabase && window.supabase.createClient){
+    try{ sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }catch(e){ sbClient = null; }
+  }
+
+  function rowToEntry(row){
+    return {id:row.id, person:row.person, date:row.date, eventType:row.event_type, direction:row.direction,
+      amount:Number(row.amount), closeness:row.closeness, isMutual:row.is_mutual, reaction:row.reaction,
+      memo:row.memo, createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()};
+  }
+  function entryToRow(e){
+    return {person:e.person, date:e.date, event_type:e.eventType, direction:e.direction, amount:e.amount,
+      closeness:e.closeness, is_mutual:e.isMutual, reaction:e.reaction, memo:e.memo};
+  }
+  function rowToGift(row){
+    return {id:row.id, person:row.person, direction:row.direction, name:row.name, tier:row.tier, date:row.date,
+      expiry:row.expiry, used:row.used, reaction:row.reaction, memo:row.memo,
+      createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()};
+  }
+  function giftToRow(g){
+    return {person:g.person, direction:g.direction, name:g.name, tier:g.tier, date:g.date,
+      expiry:g.expiry||null, used:!!g.used, reaction:g.reaction, memo:g.memo};
+  }
+  function rowToPerson(row){
+    return {id:row.id, name:row.name, age:row.age, anniversary:row.anniversary, workplace:row.workplace,
+      personality:row.personality, recentIssue:row.recent_issue};
+  }
+  function personFieldsToRow(fields){
+    var row = {};
+    if('age' in fields) row.age = fields.age;
+    if('anniversary' in fields) row.anniversary = fields.anniversary;
+    if('workplace' in fields) row.workplace = fields.workplace;
+    if('personality' in fields) row.personality = fields.personality;
+    if('recentIssue' in fields) row.recent_issue = fields.recentIssue;
+    return row;
+  }
+  function rowToRec(row){
+    return {id:row.id, person:row.person, tier:row.tier, helpful:row.helpful, advice:row.advice,
+      createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()};
+  }
+
+  async function loadSupabaseData(){
+    var results = await Promise.all([
+      sbClient.from('entries').select('*').order('date', {ascending:false}),
+      sbClient.from('gifts').select('*').order('date', {ascending:false}),
+      sbClient.from('people').select('*'),
+      sbClient.from('recommendations').select('*')
+    ]);
+    entries = (results[0].data || []).map(rowToEntry);
+    gifts = (results[1].data || []).map(rowToGift);
+    people = (results[2].data || []).map(rowToPerson);
+    recommendations = (results[3].data || []).map(rowToRec);
+  }
+
+  function updateAuthUI(){
+    var box = document.getElementById('authBox');
+    if(!sbClient || storageMode==='cloud'){ box.hidden = true; return; }
+    box.hidden = false;
+    if(currentUser){
+      box.innerHTML = '<div class="g-user"><strong>'+escapeHtml(currentUser.email||'로그인됨')+'</strong></div><button type="button" class="g-logout-btn" id="btnGoogleLogout">로그아웃</button>';
+      document.getElementById('btnGoogleLogout').addEventListener('click', function(){ sbClient.auth.signOut(); });
+    } else {
+      box.innerHTML = '<button type="button" class="g-login-btn" id="btnGoogleLogin"><span class="g-icon">G</span>Google로 로그인</button>';
+      document.getElementById('btnGoogleLogin').addEventListener('click', function(){
+        sbClient.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href.split('#')[0] } });
+      });
+    }
+  }
+
+  async function handleAuthChange(session){
+    if(storageMode === 'cloud'){ updateAuthUI(); return; }
+    if(session && session.user){
+      currentUser = session.user;
+      storageMode = 'supabaseAuth';
+      setStatus('gauth');
+      await loadSupabaseData();
+      renderAll();
+    } else if(currentUser){
+      currentUser = null;
+      storageMode = 'local';
+      var loadedFromServer = false;
+      try{
+        var res = await fetch('/api/data', {method:'GET'});
+        if(res.ok){
+          var data = await res.json();
+          entries = Array.isArray(data.entries) ? data.entries : [];
+          gifts = Array.isArray(data.gifts) ? data.gifts : [];
+          people = Array.isArray(data.people) ? data.people : [];
+          recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+          storageMode = 'server';
+          loadedFromServer = true;
+        }
+      }catch(e){ /* no local server */ }
+      if(loadedFromServer){ setStatus('server'); }
+      else { loadLocal(); loadLocalGifts(); loadLocalPeople(); loadLocalRecs(); setStatus('local'); }
+      renderAll();
+    }
+    updateAuthUI();
+  }
+
+  if(sbClient){
+    sbClient.auth.onAuthStateChange(function(_event, session){ handleAuthChange(session); });
+  }
 
   function won(n){ return '₩' + Math.round(n).toLocaleString('ko-KR'); }
   function roundTo(n, step){ return Math.round(n/step)*step; }
@@ -824,13 +962,14 @@
   function saveLocalRecs(){
     try{ localStorage.setItem(LOCAL_KEY_RECS, JSON.stringify(recommendations)); }catch(e){}
   }
-  var storageMode = 'local'; // 'cloud' | 'server' | 'local'
+  var storageMode = 'local'; // 'cloud' | 'supabaseAuth' | 'server' | 'local'
 
   function setStatus(mode){
     var el = document.getElementById('statusIndicator');
     var txt = document.getElementById('statusText');
-    el.classList.remove('live','local','server');
+    el.classList.remove('live','local','server','gauth');
     if(mode==='live'){ el.classList.add('live'); txt.textContent='이 기기·계정에 동기화됨'; }
+    else if(mode==='gauth'){ el.classList.add('gauth'); txt.textContent='Google 계정에 저장됨'; }
     else if(mode==='server'){ el.classList.add('server'); txt.textContent='이 폴더의 data.json에 저장됨'; }
     else { el.classList.add('local'); txt.textContent='이 브라우저에만 저장됨'; }
   }
@@ -914,12 +1053,18 @@
       }
       renderAll();
     }
+    updateAuthUI();
   }
 
   async function addEntry(data){
     data.createdAt = Date.now();
     if(db && !usingLocal){
       await db.collection('entries').add(data);
+    } else if(storageMode==='supabaseAuth'){
+      var row = entryToRow(data);
+      row.user_id = currentUser.id;
+      var res = await sbClient.from('entries').insert(row).select().single();
+      if(!res.error && res.data){ entries.unshift(rowToEntry(res.data)); renderAll(); }
     } else {
       data.id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
       entries.unshift(data);
@@ -931,6 +1076,10 @@
   async function updateEntry(id, data){
     if(db && !usingLocal){
       await db.doc('entries/'+id).update(data);
+    } else if(storageMode==='supabaseAuth'){
+      await sbClient.from('entries').update(entryToRow(data)).eq('id', id);
+      var idxS = entries.findIndex(function(e){ return e.id===id; });
+      if(idxS>-1){ Object.assign(entries[idxS], data); renderAll(); }
     } else {
       var idx = entries.findIndex(function(e){ return e.id===id; });
       if(idx>-1){ Object.assign(entries[idx], data); saveLocal(); persistNow(); renderAll(); }
@@ -939,6 +1088,10 @@
   async function deleteEntry(id){
     if(db && !usingLocal){
       await db.doc('entries/'+id).delete();
+    } else if(storageMode==='supabaseAuth'){
+      await sbClient.from('entries').delete().eq('id', id);
+      entries = entries.filter(function(e){ return e.id!==id; });
+      renderAll();
     } else {
       entries = entries.filter(function(e){ return e.id!==id; });
       saveLocal();
@@ -951,6 +1104,11 @@
     data.createdAt = Date.now();
     if(db && !usingLocal){
       await db.collection('gifts').add(data);
+    } else if(storageMode==='supabaseAuth'){
+      var row = giftToRow(data);
+      row.user_id = currentUser.id;
+      var res = await sbClient.from('gifts').insert(row).select().single();
+      if(!res.error && res.data){ gifts.unshift(rowToGift(res.data)); renderAll(); }
     } else {
       data.id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
       gifts.unshift(data);
@@ -962,6 +1120,10 @@
   async function deleteGift(id){
     if(db && !usingLocal){
       await db.doc('gifts/'+id).delete();
+    } else if(storageMode==='supabaseAuth'){
+      await sbClient.from('gifts').delete().eq('id', id);
+      gifts = gifts.filter(function(g){ return g.id!==id; });
+      renderAll();
     } else {
       gifts = gifts.filter(function(g){ return g.id!==id; });
       saveLocalGifts();
@@ -972,6 +1134,10 @@
   async function toggleGiftUsed(id, used){
     if(db && !usingLocal){
       await db.doc('gifts/'+id).update({used:used});
+    } else if(storageMode==='supabaseAuth'){
+      await sbClient.from('gifts').update({used:used}).eq('id', id);
+      var gS = gifts.find(function(g){ return g.id===id; });
+      if(gS){ gS.used = used; renderAll(); }
     } else {
       var g = gifts.find(function(g){ return g.id===id; });
       if(g){ g.used = used; saveLocalGifts(); persistNow(); renderAll(); }
@@ -983,6 +1149,18 @@
     if(db && !usingLocal){
       if(existing){ await db.doc('people/'+existing.id).update(fields); }
       else { await db.collection('people').add(Object.assign({name:name}, fields)); }
+    } else if(storageMode==='supabaseAuth'){
+      var row = personFieldsToRow(fields);
+      if(existing){
+        await sbClient.from('people').update(row).eq('id', existing.id);
+        Object.assign(existing, fields);
+        renderAll();
+      } else {
+        row.user_id = currentUser.id;
+        row.name = name;
+        var res = await sbClient.from('people').insert(row).select().single();
+        if(!res.error && res.data){ people.push(rowToPerson(res.data)); renderAll(); }
+      }
     } else {
       if(existing){ Object.assign(existing, fields); }
       else { people.push(Object.assign({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())), name:name}, fields)); }
@@ -996,6 +1174,10 @@
     var data = {person:person, tier:tier, helpful:helpful, advice:advice, createdAt:Date.now()};
     if(db && !usingLocal){
       await db.collection('recommendations').add(data);
+    } else if(storageMode==='supabaseAuth'){
+      var row = {person:person, tier:tier, helpful:helpful, advice:advice, user_id:currentUser.id};
+      var res = await sbClient.from('recommendations').insert(row).select().single();
+      if(!res.error && res.data){ recommendations.unshift(rowToRec(res.data)); renderAll(); }
     } else {
       data.id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
       recommendations.unshift(data);
