@@ -1,0 +1,10 @@
+{
+  "name": "0915digital_education",
+  "version": "1.0.0",
+  "private": true,
+  "description": "경조사비 · 기프티콘 · 인간관계 관리 앱 (봉투장부)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
