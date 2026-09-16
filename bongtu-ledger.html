@@ -367,7 +367,7 @@
 
     <div>
       <h2 class="section-title">통합 정산 (경조사비 + 선물)</h2>
-      <p class="hint">선물은 가격대(실속형 1만·중가 3만·고가 7만원)로 환산해 경조사비와 함께 합산한 값이에요.</p>
+      <p class="hint">선물은 실제 가격을 입력했으면 그 값을, 없으면 가격대(실속형 1만·중가 3만·고가 7만원)로 환산해 경조사비와 함께 합산한 값이에요.</p>
       <div class="balance-list" id="balanceList"></div>
     </div>
 
@@ -573,7 +573,10 @@
         <label>추정 쿠폰명
           <input type="text" id="gp_name">
         </label>
-        <label>추정 가격대
+        <label>추정 실제 가격 (원, 알면 직접 수정)
+          <input type="text" inputmode="numeric" id="gp_amount" placeholder="예: 4,500">
+        </label>
+        <label>가격대
           <select id="gp_tier">
             <option value="실속형">실속형</option>
             <option value="중가">중가</option>
@@ -604,6 +607,10 @@
       </label>
       <label class="full">쿠폰명
         <input type="text" id="g_name" required placeholder="예: 스타벅스 아메리카노 Tall">
+      </label>
+      <p class="hint full" style="grid-column:1/-1; margin:-6px 0 0;">잘 알려진 음료·상품이면 가격을 자동으로 추정해서 채워드려요 (직접 수정 가능).</p>
+      <label>실제 가격 (원, 선택)
+        <input type="text" inputmode="numeric" id="g_amount" placeholder="아는 만큼만, 예: 4,500">
       </label>
       <label>가격대
         <select id="g_tier">
@@ -641,7 +648,7 @@
 
     <div class="table-wrap">
       <table id="giftTable">
-        <thead><tr><th>날짜</th><th>이름</th><th>쿠폰명</th><th>가격대</th><th>구분</th><th>유효기간</th><th>사용</th><th></th></tr></thead>
+        <thead><tr><th>날짜</th><th>이름</th><th>쿠폰명</th><th>가격</th><th>구분</th><th>유효기간</th><th>사용</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -742,7 +749,9 @@
         <h3>기프티콘</h3>
         <ul>
           <li>"＋ 새 선물 기록"으로 직접 입력하거나, "카톡 텍스트로 추가"에서 대화를 붙여넣어 <strong>분석하기</strong>(규칙 기반)로 자동 채우기</li>
-          <li>카톡 캡처나 영수증 사진이 있으면 "사진 분석하기"로 AI가 쿠폰명·가격대를 읽어드려요 (claude.ai에서 열었을 때만 동작)</li>
+          <li>카톡 캡처나 영수증 사진이 있으면 "사진 분석하기"로 AI가 쿠폰명·가격을 읽어드려요 (claude.ai에서 열었을 때만 동작)</li>
+          <li><strong>실제 가격</strong>을 알고 있으면 직접 입력할 수 있고, 쿠폰명이 스타벅스 아메리카노 같은 잘 알려진 상품이면 자동으로 가격을 채워드려요 (실시간 인터넷 조회가 아니라 내장된 참고 가격표예요, 목록에 없으면 직접 입력)</li>
+          <li>실제 가격을 입력한 선물은 정산·통합 잔액 계산에도 가격대 대신 그 값이 그대로 반영돼요</li>
           <li>받은 선물은 표에서 "사용" 체크박스로 사용 여부를 표시하고, 유효기간이 14일 이내로 다가오면 상단에 경고가 떠요</li>
           <li>목록 위 필터로 <strong>사람</strong>·<strong>보낸 것/받은 것</strong> 기준으로 골라볼 수 있어요</li>
         </ul>
@@ -833,6 +842,49 @@
   var TIER_WEIGHT = {'실속형':1,'중가':2,'고가':3};
   var GIFT_TIER_VALUE = {'실속형':10000,'중가':30000,'고가':70000};
 
+  // 자주 선물하는 품목의 대략적인 실제 가격표 (실시간 인터넷 조회가 아니라, 내장된 참고용 표예요.
+  // 목록에 없는 상품은 자동으로 채워지지 않으니 직접 입력하시면 됩니다.)
+  var KNOWN_ITEM_PRICES = [
+    {re:/아메리카노.*tall|tall.*아메리카노/i, price:4500},
+    {re:/스타벅스.*(카페라떼|라떼)/i, price:5000},
+    {re:/스타벅스.*카푸치노/i, price:5000},
+    {re:/스타벅스.*카라멜\s*마키아토/i, price:5900},
+    {re:/스타벅스.*프라푸치노/i, price:6300},
+    {re:/투썸.*아메리카노/i, price:4500},
+    {re:/이디야.*아메리카노/i, price:3200},
+    {re:/메가커피.*아메리카노/i, price:1500},
+    {re:/컴포즈.*아메리카노/i, price:1500},
+    {re:/빽다방.*아메리카노/i, price:2000},
+    {re:/배스킨라빈스.*파인트/i, price:9500},
+    {re:/배스킨라빈스.*쿼터/i, price:14500},
+    {re:/교촌.*허니콤보/i, price:23000},
+    {re:/교촌.*레드콤보/i, price:23000},
+    {re:/bhc.*뿌링클/i, price:20000},
+    {re:/bbq.*황금올리브/i, price:20000},
+    {re:/맘스터치.*싸이버거/i, price:5900},
+    {re:/설빙.*인절미/i, price:9500},
+    {re:/파리바게뜨.*케이크|케이크.*파리바게뜨/i, price:33000},
+    {re:/올리브영.*(5000|5,000)/i, price:5000},
+    {re:/올리브영.*(10000|1만|10,000)/i, price:10000},
+    {re:/올리브영.*(30000|3만|30,000)/i, price:30000}
+  ];
+
+  function lookupKnownPrice(name){
+    if(!name) return null;
+    for(var i=0;i<KNOWN_ITEM_PRICES.length;i++){
+      if(KNOWN_ITEM_PRICES[i].re.test(name)) return KNOWN_ITEM_PRICES[i].price;
+    }
+    return null;
+  }
+  function tierFromAmount(amount){
+    if(amount>=30000) return '고가';
+    if(amount>=10000) return '중가';
+    return '실속형';
+  }
+  function giftValue(g){
+    return (g.amount!=null && g.amount>0) ? Number(g.amount) : (GIFT_TIER_VALUE[g.tier] || 0);
+  }
+
   // ---------- Google 로그인 (Supabase Auth) ----------
   var SUPABASE_URL = 'https://yuxtiibyfntyiccokplt.supabase.co';
   var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1eHRpaWJ5Zm50eWljY29rcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NTYyMzUsImV4cCI6MjEwNTAzMjIzNX0.-c-mr5t83HcGP1obNlHKGcZ3UzJOHYKTUJexjieHBj8';
@@ -854,11 +906,13 @@
   }
   function rowToGift(row){
     return {id:row.id, person:row.person, direction:row.direction, name:row.name, tier:row.tier, date:row.date,
+      amount: (row.amount!=null ? Number(row.amount) : null),
       expiry:row.expiry, used:row.used, reaction:row.reaction, memo:row.memo,
       createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()};
   }
   function giftToRow(g){
     return {person:g.person, direction:g.direction, name:g.name, tier:g.tier, date:g.date,
+      amount: g.amount || null,
       expiry:g.expiry||null, used:!!g.used, reaction:g.reaction, memo:g.memo};
   }
   function rowToPerson(row){
@@ -1268,7 +1322,7 @@
     var gave=0, recv=0;
     gifts.forEach(function(g){
       if(g.person!==personName) return;
-      var v = GIFT_TIER_VALUE[g.tier] || 0;
+      var v = giftValue(g);
       if(g.direction==='gave') gave+=v; else recv+=v;
     });
     return recv-gave;
@@ -1334,7 +1388,7 @@
     netEl.style.color = s.net>=0 ? 'var(--blue)' : 'var(--red-ink)';
     document.getElementById('tileCount').textContent = s.count + '건';
 
-    var giftNetTotal = gifts.reduce(function(sum,g){ var v=GIFT_TIER_VALUE[g.tier]||0; return sum + (g.direction==='received'? v : -v); },0);
+    var giftNetTotal = gifts.reduce(function(sum,g){ var v=giftValue(g); return sum + (g.direction==='received'? v : -v); },0);
     var giftNetEl = document.getElementById('tileGiftNet');
     giftNetEl.textContent = (giftNetTotal>=0?'+':'') + won(giftNetTotal);
     giftNetEl.style.color = giftNetTotal>=0 ? 'var(--blue)' : 'var(--red-ink)';
@@ -1530,7 +1584,7 @@
         '<td>'+g.date+'</td>'+
         '<td>'+escapeHtml(g.person)+'</td>'+
         '<td>'+escapeHtml(g.name)+'</td>'+
-        '<td><span class="pill tier-'+(g.tier==='실속형'?'basic':g.tier==='중가'?'mid':'high')+'">'+g.tier+'</span></td>'+
+        '<td>'+(g.amount?('<span style="font-variant-numeric:tabular-nums; font-weight:600;">'+won(g.amount)+'</span> '):'')+'<span class="pill tier-'+(g.tier==='실속형'?'basic':g.tier==='중가'?'mid':'high')+'">'+g.tier+'</span></td>'+
         '<td><span class="pill '+(g.direction==='gave'?'gave':'recv')+'">'+(g.direction==='gave'?'보냄':'받음')+'</span></td>'+
         '<td>'+(g.expiry||'—')+'</td>'+
         '<td>'+usedCell+'</td>'+
@@ -1725,6 +1779,7 @@
       person: document.getElementById('g_person').value.trim(),
       direction: dir,
       name: document.getElementById('g_name').value.trim(),
+      amount: parseAmountInput(document.getElementById('g_amount').value) || null,
       tier: document.getElementById('g_tier').value,
       date: document.getElementById('g_date').value || todayStr(),
       expiry: document.getElementById('g_expiry').value || null,
@@ -1738,11 +1793,23 @@
     giftForm.hidden = true;
   });
 
+  document.getElementById('g_amount').addEventListener('input', function(){ formatAmountField(this); });
+  document.getElementById('g_name').addEventListener('blur', function(){
+    var amtField = document.getElementById('g_amount');
+    if(amtField.value.trim()) return; // 이미 값이 있으면 덮어쓰지 않음
+    var price = lookupKnownPrice(this.value.trim());
+    if(price){
+      amtField.value = price.toLocaleString('ko-KR');
+      document.getElementById('g_tier').value = tierFromAmount(price);
+    }
+  });
+
   function prefillGiftForm(data){
     goTab('gift');
     giftForm.hidden = false;
     document.getElementById('g_person').value = data.person || '';
     document.getElementById('g_name').value = data.name || '';
+    document.getElementById('g_amount').value = data.amount ? Number(data.amount).toLocaleString('ko-KR') : '';
     document.getElementById('g_tier').value = data.tier || '중가';
     document.getElementById('g_date').value = data.date || todayStr();
     if(data.direction){ giftForm.querySelector('input[name="g_dir"][value="'+data.direction+'"]').checked = true; }
@@ -1801,6 +1868,10 @@
       .replace(/기프티콘을?\s*(보냈|받았)습니다\.?/,'')
       .trim();
     var tier = guessGiftTier(text, amount);
+    if(!amount){
+      var known = lookupKnownPrice(giftLine);
+      if(known){ amount = known; tier = tierFromAmount(known); }
+    }
     return {name:name, giftName:giftLine, amount:amount, tier:tier};
   }
 
@@ -1809,9 +1880,11 @@
     var r = parseGiftText(text);
     document.getElementById('gp_person').value = r.name || '';
     document.getElementById('gp_name').value = r.giftName || '';
+    document.getElementById('gp_amount').value = r.amount ? r.amount.toLocaleString('ko-KR') : '';
     document.getElementById('gp_tier').value = r.tier;
     document.getElementById('giftParseResult').classList.add('show');
   });
+  document.getElementById('gp_amount').addEventListener('input', function(){ formatAmountField(this); });
 
   var AI_ERROR_COPY = {
     not_granted: 'AI 기능 사용을 허용하지 않으셨어요.',
@@ -1839,12 +1912,15 @@
     try{
       var data = await sample.json(
         '이 이미지는 카카오톡 선물하기 화면 또는 기프티콘/영수증 캡처야. 아래 JSON 형식으로만 답해:\n'+
-        '{"person": 보낸 사람 이름(안 보이면 null), "giftName": 쿠폰/상품 이름, "tier": "실속형"|"중가"|"고가" 중 하나(가격이 보이면 그것 기준, 안 보이면 상품 종류로 추정)}',
+        '{"person": 보낸 사람 이름(안 보이면 null), "giftName": 쿠폰/상품 이름, "amount": 이미지에 실제 가격이 보이면 숫자(원 단위)로, 안 보이면 null, "tier": "실속형"|"중가"|"고가" 중 하나(가격이 보이면 그것 기준, 안 보이면 상품 종류로 추정)}',
         {modelTier:'default', cache:false, images:[file]}
       );
       document.getElementById('gp_person').value = data.person || '';
       document.getElementById('gp_name').value = data.giftName || '';
-      if(data.tier) document.getElementById('gp_tier').value = data.tier;
+      var knownAmt = data.amount || lookupKnownPrice(data.giftName || '');
+      document.getElementById('gp_amount').value = knownAmt ? Number(knownAmt).toLocaleString('ko-KR') : '';
+      if(knownAmt) document.getElementById('gp_tier').value = tierFromAmount(knownAmt);
+      else if(data.tier) document.getElementById('gp_tier').value = data.tier;
       document.getElementById('giftParseResult').classList.add('show');
       status.hidden = true;
     }catch(e){ showAiError(status, e); }
@@ -1856,6 +1932,7 @@
     prefillGiftForm({
       person: document.getElementById('gp_person').value.trim(),
       name: document.getElementById('gp_name').value.trim(),
+      amount: parseAmountInput(document.getElementById('gp_amount').value) || null,
       tier: document.getElementById('gp_tier').value,
       direction: dir,
       date: todayStr()
@@ -1921,7 +1998,7 @@
     var items = entries.filter(function(e){ return e.person===name; }).map(function(e){
       return {date:e.date, desc:'경조사비 · '+e.eventType+' · '+(e.direction==='gave'?'냄':'받음'), amt:(e.direction==='gave'?-1:1)*e.amount};
     }).concat(gifts.filter(function(g){ return g.person===name; }).map(function(g){
-      return {date:g.date, desc:'선물 · '+g.name+' · '+(g.direction==='gave'?'보냄':'받음'), amt:(g.direction==='gave'?-1:1)*(GIFT_TIER_VALUE[g.tier]||0)};
+      return {date:g.date, desc:'선물 · '+g.name+' · '+(g.direction==='gave'?'보냄':'받음'), amt:(g.direction==='gave'?-1:1)*giftValue(g)};
     })).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
     if(items.length===0) return '<div class="empty">아직 기록이 없어요.</div>';
     return items.map(function(it){
