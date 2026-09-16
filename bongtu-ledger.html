@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>봉투장부</title>
+<title>마음장부</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -361,8 +361,8 @@
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <h1>봉투장부</h1>
-      <span class="tag">경조사비, 잊지 않고 오래 가는 관계로</span>
+      <h1>마음장부</h1>
+      <span class="tag">챙긴 마음, 잊지 않고 이어가는 관계</span>
       <span class="mode-badge" id="modeBadge" hidden></span>
     </div>
     <div class="headerRight">
@@ -685,7 +685,7 @@
   <!-- PEOPLE -->
   <section class="panel" id="tab-people" hidden>
     <h2 class="section-title" id="personFormTitle">사람별 프로필</h2>
-    <p class="hint">나이·성향·직장·최근 이슈를 기록해두면 화이트/블랙리스트 분류에 활용돼요. 프로필 카드의 "편집"을 누르면 여기서 수정할 수 있어요.</p>
+    <p class="hint">나이·생일·결혼기념일·입사일·학력·성향 태그·최근 이슈를 기록해두면 화이트/블랙리스트 분류와 기념일 알림에 활용돼요. 프로필 카드의 "편집"을 누르면 여기서 수정할 수 있어요. 이름과 직장/소속 칸은 입력하면 사내 명단에서 자동완성돼요(예: "김" 입력 시 김씨 목록이 드롭다운으로 펼쳐져요).</p>
     <form class="card" id="personForm">
       <label class="full">이름
         <input type="text" id="pp_name" list="personList" required placeholder="예: 오정화">
@@ -693,13 +693,57 @@
       <label>나이 (선택)
         <input type="text" inputmode="numeric" id="pp_age" placeholder="예: 29">
       </label>
-      <label>기념일 (월-일, 선택)
-        <input type="text" id="pp_anniversary" placeholder="09-15" pattern="[0-1][0-9]-[0-3][0-9]">
+      <label>생일 (월-일, 선택)
+        <input type="text" id="pp_birthday" placeholder="09-15" pattern="[0-1][0-9]-[0-3][0-9]">
+      </label>
+      <label class="full">결혼 여부
+        <div class="radiorow">
+          <label><input type="radio" name="pp_marital" value="single" checked> 미혼</label>
+          <label class="recv"><input type="radio" name="pp_marital" value="married"> 기혼</label>
+        </div>
+      </label>
+      <label id="pp_weddingRow" hidden>결혼기념일 (월-일)
+        <input type="text" id="pp_weddingAnniversary" placeholder="05-20" pattern="[0-1][0-9]-[0-3][0-9]">
+      </label>
+      <label>입사일 (월-일, 선택)
+        <input type="text" id="pp_joinDate" placeholder="03-02" pattern="[0-1][0-9]-[0-3][0-9]">
+      </label>
+      <label>학번 (선택)
+        <input type="text" id="pp_studentId" placeholder="예: 20학번">
+      </label>
+      <label>군번 (선택)
+        <input type="text" id="pp_militaryId" placeholder="예: 20-12345678">
+      </label>
+      <label>학력 (선택)
+        <input type="text" id="pp_education" placeholder="예: OO대학교 경영학과 졸업">
       </label>
       <label>직장/소속 (선택)
-        <input type="text" id="pp_workplace" placeholder="예: OO전자 마케팅팀">
+        <input type="text" id="pp_workplace" list="deptList" placeholder="예: OO전자 마케팅팀">
+        <datalist id="deptList"></datalist>
       </label>
-      <label>성향 (선택)
+      <label class="full">관심사·성향 태그 (선택, 여러 개 선택 가능)
+        <div class="chiprow" id="pp_tagChips">
+          <button type="button" class="ghost-btn tag-chip" data-tag="운동/스포츠">운동/스포츠</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="독서">독서</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="출퇴근러">출퇴근러</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="자취러">자취러</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="반려동물">반려동물</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="카페인홀릭">카페인홀릭</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="헬스/러닝">헬스/러닝</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="여행">여행</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="게임">게임</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="OTT/드라마">OTT/드라마</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="맛집투어">맛집투어</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="사진/SNS">사진/SNS</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="재테크/주식">재테크/주식</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="캠핑/아웃도어">캠핑/아웃도어</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="뷰티/패션">뷰티/패션</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="육아">육아</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="홈카페">홈카페</button>
+          <button type="button" class="ghost-btn tag-chip" data-tag="미니멀리스트">미니멀리스트</button>
+        </div>
+      </label>
+      <label class="full">성향 메모 (자유 입력, 선택)
         <input type="text" id="pp_personality" placeholder="예: 활발함, 커피 좋아함, 미니멀 취향">
       </label>
       <label class="full">최근 이슈 (선택)
@@ -786,7 +830,10 @@
       <div class="m-item">
         <h3>사람</h3>
         <ul>
-          <li>이름·나이·직장·성향·최근 이슈·기념일을 등록해두면 프로필 카드가 생겨요</li>
+          <li>이름·나이·직장·학력·성향 태그·최근 이슈를 등록해두면 프로필 카드가 생겨요</li>
+          <li>이름·직장/소속 칸은 등록된 사내 명단(이름·부서)을 바탕으로 자동완성돼요. 명단에 있는 이름을 입력하면 직장/소속 칸이 비어있을 때 부서명이 자동으로 채워져요</li>
+          <li>생일·결혼기념일(기혼 체크 시)·입사일을 등록하면 "기념일 &amp; 답례 알림"에서 30일 이내 다가오는 기념일을 종류별로 알려줘요</li>
+          <li>학번·군번은 참고용 메모예요 (예: 소개팅, 동문 모임 등에서 활용)</li>
           <li><strong>화이트/블랙리스트</strong>는 통합 정산 금액 기준이에요 — 내가 받은 게 3만원 이상 많으면 화이트, 내가 챙겨준 게 3만원 이상 많으면 블랙, 그 사이면 보통</li>
           <li><strong>내 반응</strong>(좋음/보통/별로)은 라벨링과 별개로 기록에 남긴 평가의 평균으로 따로 표시돼요</li>
           <li>주고받은 이력 타임라인도 확인할 수 있어요</li>
@@ -859,6 +906,71 @@
   var gifts = [];
   var people = [];
   var recommendations = [];
+  // 디지털 입문교육 명단: 자동완성용 참고 데이터 (이름, 부서)
+  var DIRECTORY = [
+    ["강기병","AX추진팀"],
+    ["강민혁","AI Data팀"],
+    ["고대권","자산관리개발팀"],
+    ["김성윤","트레이딩개발팀"],
+    ["김예진","디지털연금고객팀"],
+    ["김지영","정보기획파트"],
+    ["김태현","디지털사업부 디지털영업부"],
+    ["김혜수","채널IT파트"],
+    ["김혜원","연금운영팀"],
+    ["김효정","UX기획팀"],
+    ["김희준","데이터솔루션팀"],
+    ["나정민","상품업무혁신팀"],
+    ["노나현","정보전략팀 IT기획P"],
+    ["노재성","AI보안P"],
+    ["박상순","고객전략파트"],
+    ["박세연","LifeCare마케팅팀"],
+    ["박연주","AI기획팀"],
+    ["박원규","디지털사업전략팀"],
+    ["박원석","IT보안파트"],
+    ["박중현","채널IT파트"],
+    ["박지연","데이터혁신파트"],
+    ["박찬영","IT기획팀"],
+    ["서강문","플랫폼개발팀"],
+    ["서해원","AX추진팀 영업플랫폼P"],
+    ["설화영","AX기획팀 코어AX파트"],
+    ["손수빈","AI기획파트"],
+    ["신동준","상품운용개발팀"],
+    ["신성은","디지털사업전략팀"],
+    ["심승보","연금추진팀"],
+    ["안민희","IT기획팀"],
+    ["안정후","자산관리개발팀"],
+    ["안채연","모니모팀"],
+    ["양은선","정보전략팀 시스템운영P"],
+    ["오정화","페이먼트기획팀"],
+    ["원지영","핀테크팀"],
+    ["유광현","PI사무국"],
+    ["윤혜신","연금운영팀"],
+    ["윤호섭","디지털사업부 디지털사업지원P"],
+    ["이다영","데이터사업팀"],
+    ["이민지","AX추진팀 영업AX파트"],
+    ["이우현","연금운영팀"],
+    ["이지우","모니모팀"],
+    ["이지은","UI/UX지원파트"],
+    ["이채원","프리미엄마케팅팀"],
+    ["임미경","AX기획팀 AX기획P"],
+    ["임승민","데이터혁신파트"],
+    ["임정민","정보전략팀 기술운영P"],
+    ["장호준","로열티마케팅팀"],
+    ["전동원","고객업무혁신팀"],
+    ["정은혜","회원마케팅팀"],
+    ["정재웅","플랫폼서비스팀"],
+    ["조민영","디지털사업부 플랫폼개발P"],
+    ["조민우","디지털기술팀"],
+    ["조혜인","정보보호P"],
+    ["최도은","디지털사업부 플랫폼기획P"],
+    ["최민경","모니모서비스팀"],
+    ["최승범","디지털사업부 디지털영업부"],
+    ["하민지","트레이딩개발팀"],
+    ["홍세아","AI전략파트"],
+    ["황성아","AX추진팀 영업플랫폼P"]
+  ];
+  var DIRECTORY_BY_NAME = {};
+  DIRECTORY.forEach(function(row){ DIRECTORY_BY_NAME[row[0]] = row[1]; });
   var LOCAL_KEY = 'bongtu_entries_v1';
   var LOCAL_KEY_GIFTS = 'bongtu_gifts_v1';
   var LOCAL_KEY_PEOPLE = 'bongtu_people_v1';
@@ -943,15 +1055,32 @@
       expiry:g.expiry||null, used:!!g.used, reaction:g.reaction, memo:g.memo};
   }
   function rowToPerson(row){
-    return {id:row.id, name:row.name, age:row.age, anniversary:row.anniversary, workplace:row.workplace,
-      personality:row.personality, recentIssue:row.recent_issue};
+    return {id:row.id, name:row.name, age:row.age,
+      birthday: row.birthday || row.anniversary || '',
+      maritalStatus: row.marital_status || 'single',
+      weddingAnniversary: row.wedding_anniversary || '',
+      joinDate: row.join_date || '',
+      studentId: row.student_id || '',
+      militaryId: row.military_id || '',
+      education: row.education || '',
+      workplace:row.workplace,
+      personality:row.personality,
+      personalityTags: row.personality_tags || [],
+      recentIssue:row.recent_issue};
   }
   function personFieldsToRow(fields){
     var row = {};
     if('age' in fields) row.age = fields.age;
-    if('anniversary' in fields) row.anniversary = fields.anniversary;
+    if('birthday' in fields) row.birthday = fields.birthday;
+    if('maritalStatus' in fields) row.marital_status = fields.maritalStatus;
+    if('weddingAnniversary' in fields) row.wedding_anniversary = fields.weddingAnniversary;
+    if('joinDate' in fields) row.join_date = fields.joinDate;
+    if('studentId' in fields) row.student_id = fields.studentId;
+    if('militaryId' in fields) row.military_id = fields.militaryId;
+    if('education' in fields) row.education = fields.education;
     if('workplace' in fields) row.workplace = fields.workplace;
     if('personality' in fields) row.personality = fields.personality;
+    if('personalityTags' in fields) row.personality_tags = fields.personalityTags;
     if('recentIssue' in fields) row.recent_issue = fields.recentIssue;
     return row;
   }
@@ -1416,8 +1545,16 @@
       entries.map(function(e){ return e.person; })
         .concat(gifts.map(function(g){ return g.person; }))
         .concat(people.map(function(p){ return p.name; }))
+        .concat(DIRECTORY.map(function(row){ return row[0]; }))
     )).filter(Boolean).sort();
     dl.innerHTML = names.map(function(n){ return '<option value="'+escapeHtml(n)+'">'; }).join('');
+
+    var deptDl = document.getElementById('deptList');
+    var depts = Array.from(new Set(
+      DIRECTORY.map(function(row){ return row[1]; })
+        .concat(people.map(function(p){ return p.workplace; }))
+    )).filter(Boolean).sort();
+    deptDl.innerHTML = depts.map(function(d){ return '<option value="'+escapeHtml(d)+'">'; }).join('');
   }
 
   function escapeHtml(s){
@@ -1600,20 +1737,30 @@
       }).join('');
     }
 
-    var upcoming = people.map(function(p){
-      var next = nextAnniversary(p.anniversary);
-      if(!next) return null;
-      var d = daysBetween(next);
-      var bal = balances.find(function(b){ return b.name===p.name; });
-      return {name:p.name, date:next, d:d, needsGift: bal && bal.imbalance>=2};
-    }).filter(function(x){ return x && x.d<=30 && x.d>=0; })
-      .sort(function(a,b){ return a.d-b.d; });
+    var ANNIV_KINDS = [
+      {field:'birthday', label:'생일'},
+      {field:'weddingAnniversary', label:'결혼기념일', requires:function(p){ return p.maritalStatus==='married'; }},
+      {field:'joinDate', label:'입사기념일'}
+    ];
+    var upcoming = [];
+    people.forEach(function(p){
+      ANNIV_KINDS.forEach(function(k){
+        if(k.requires && !k.requires(p)) return;
+        var next = nextAnniversary(p[k.field]);
+        if(!next) return;
+        var d = daysBetween(next);
+        if(d<0 || d>30) return;
+        var bal = balances.find(function(b){ return b.name===p.name; });
+        upcoming.push({name:p.name, date:next, d:d, kind:k.label, needsGift: bal && bal.imbalance>=2});
+      });
+    });
+    upcoming.sort(function(a,b){ return a.d-b.d; });
     var annEl = document.getElementById('anniversaryList');
     if(upcoming.length===0){
       annEl.innerHTML = '<div class="empty">30일 이내 기념일이 없어요.</div>';
     } else {
       annEl.innerHTML = upcoming.map(function(u){
-        return '<div class="anniv-row"><div><strong>'+escapeHtml(u.name)+'</strong> · '+u.date.slice(5)+(u.needsGift?' <span class="warn-chip">답례 선물 고려</span>':'')+'</div><div class="dleft '+(u.d<=3?'soon':'')+'">D-'+u.d+'</div></div>';
+        return '<div class="anniv-row"><div><strong>'+escapeHtml(u.name)+'</strong> · '+u.kind+' · '+u.date.slice(5)+(u.needsGift?' <span class="warn-chip">답례 선물 고려</span>':'')+'</div><div class="dleft '+(u.d<=3?'soon':'')+'">D-'+u.d+'</div></div>';
       }).join('');
     }
 
@@ -1651,7 +1798,16 @@
     });
   }
 
+  function normalizePeople(){
+    people.forEach(function(p){
+      if(!p.birthday && p.anniversary) p.birthday = p.anniversary;
+      if(!p.maritalStatus) p.maritalStatus = 'single';
+      if(!p.personalityTags) p.personalityTags = [];
+    });
+  }
+
   function renderAll(){
+    normalizePeople();
     updatePersonList();
     renderDash();
     renderRecords();
@@ -1991,10 +2147,39 @@
   var editingPersonName = null;
   var personSubmitBtn = document.getElementById('personSubmitBtn');
 
+  function setWeddingRowVisibility(){
+    var married = document.querySelector('input[name="pp_marital"]:checked').value === 'married';
+    document.getElementById('pp_weddingRow').hidden = !married;
+  }
+  document.querySelectorAll('input[name="pp_marital"]').forEach(function(r){
+    r.addEventListener('change', setWeddingRowVisibility);
+  });
+  document.getElementById('pp_name').addEventListener('input', function(){
+    var dept = DIRECTORY_BY_NAME[this.value.trim()];
+    var wp = document.getElementById('pp_workplace');
+    if(dept && !wp.value.trim()) wp.value = dept;
+  });
+  document.getElementById('pp_tagChips').addEventListener('click', function(ev){
+    var btn = ev.target.closest('.tag-chip');
+    if(!btn) return;
+    btn.classList.toggle('active');
+  });
+
+  function setSelectedTags(tags){
+    document.querySelectorAll('#pp_tagChips .tag-chip').forEach(function(btn){
+      btn.classList.toggle('active', tags.indexOf(btn.dataset.tag) !== -1);
+    });
+  }
+  function getSelectedTags(){
+    return Array.from(document.querySelectorAll('#pp_tagChips .tag-chip.active')).map(function(btn){ return btn.dataset.tag; });
+  }
+
   function resetPersonForm(){
     editingPersonName = null;
     document.getElementById('personForm').reset();
     document.getElementById('pp_name').disabled = false;
+    setSelectedTags([]);
+    setWeddingRowVisibility();
     personSubmitBtn.textContent = '저장';
     document.getElementById('personFormTitle').textContent = '사람별 프로필';
   }
@@ -2005,8 +2190,16 @@
     document.getElementById('pp_name').value = name;
     document.getElementById('pp_name').disabled = true;
     document.getElementById('pp_age').value = p.age || '';
-    document.getElementById('pp_anniversary').value = p.anniversary || '';
+    document.getElementById('pp_birthday').value = p.birthday || '';
+    document.querySelector('input[name="pp_marital"][value="'+(p.maritalStatus==='married'?'married':'single')+'"]').checked = true;
+    document.getElementById('pp_weddingAnniversary').value = p.weddingAnniversary || '';
+    setWeddingRowVisibility();
+    document.getElementById('pp_joinDate').value = p.joinDate || '';
+    document.getElementById('pp_studentId').value = p.studentId || '';
+    document.getElementById('pp_militaryId').value = p.militaryId || '';
+    document.getElementById('pp_education').value = p.education || '';
     document.getElementById('pp_workplace').value = p.workplace || '';
+    setSelectedTags(p.personalityTags || []);
     document.getElementById('pp_personality').value = p.personality || '';
     document.getElementById('pp_recentIssue').value = p.recentIssue || '';
     personSubmitBtn.textContent = '수정 저장';
@@ -2023,10 +2216,20 @@
     var name = editingPersonName || document.getElementById('pp_name').value.trim();
     if(!name) return;
     var existing = people.find(function(p){ return p.name===name; });
-    var mmdd = document.getElementById('pp_anniversary').value.trim();
+    var mmddOf = function(id){
+      var v = document.getElementById(id).value.trim();
+      return /^\d{2}-\d{2}$/.test(v) ? v : '';
+    };
+    var marital = document.querySelector('input[name="pp_marital"]:checked').value;
     var raw = {
       age: document.getElementById('pp_age').value.trim(),
-      anniversary: /^\d{2}-\d{2}$/.test(mmdd) ? mmdd : '',
+      birthday: mmddOf('pp_birthday'),
+      maritalStatus: marital,
+      weddingAnniversary: marital==='married' ? mmddOf('pp_weddingAnniversary') : '',
+      joinDate: mmddOf('pp_joinDate'),
+      studentId: document.getElementById('pp_studentId').value.trim(),
+      militaryId: document.getElementById('pp_militaryId').value.trim(),
+      education: document.getElementById('pp_education').value.trim(),
       workplace: document.getElementById('pp_workplace').value.trim(),
       personality: document.getElementById('pp_personality').value.trim(),
       recentIssue: document.getElementById('pp_recentIssue').value.trim()
@@ -2037,6 +2240,8 @@
       if(raw[k] !== ''){ fields[k] = raw[k]; }
       else { fields[k] = existing ? (existing[k] != null ? existing[k] : null) : null; }
     });
+    // 성향 태그는 빈 배열도 유효한 선택이라 위 로직과 분리해서 그대로 저장
+    fields.personalityTags = getSelectedTags();
     upsertPerson(name, fields);
     resetPersonForm();
   });
@@ -2073,10 +2278,19 @@
       var gradeClass = grade.grade==='white'?'grade-white':(grade.grade==='black'?'grade-black':'grade-neutral');
       var meta = [];
       if(p.age) meta.push('나이 <strong>'+escapeHtml(p.age)+'</strong>');
+      if(p.birthday) meta.push('생일 <strong>'+escapeHtml(p.birthday)+'</strong>');
+      if(p.maritalStatus==='married') meta.push('기혼'+(p.weddingAnniversary?' <strong>('+escapeHtml(p.weddingAnniversary)+')</strong>':''));
+      else meta.push('미혼');
+      if(p.joinDate) meta.push('입사일 <strong>'+escapeHtml(p.joinDate)+'</strong>');
+      if(p.education) meta.push('학력 <strong>'+escapeHtml(p.education)+'</strong>');
+      if(p.studentId) meta.push('학번 <strong>'+escapeHtml(p.studentId)+'</strong>');
+      if(p.militaryId) meta.push('군번 <strong>'+escapeHtml(p.militaryId)+'</strong>');
       if(p.workplace) meta.push('직장 <strong>'+escapeHtml(p.workplace)+'</strong>');
       if(p.personality) meta.push('성향 <strong>'+escapeHtml(p.personality)+'</strong>');
       if(p.recentIssue) meta.push('최근 이슈 <strong>'+escapeHtml(p.recentIssue)+'</strong>');
-      if(p.anniversary) meta.push('기념일 <strong>'+escapeHtml(p.anniversary)+'</strong>');
+      var tagsHtml = (p.personalityTags && p.personalityTags.length)
+        ? '<div class="profile-meta">'+p.personalityTags.map(function(t){ return '<span class="pill grade-neutral">'+escapeHtml(t)+'</span>'; }).join('')+'</div>'
+        : '';
       var expanded = !!expandedProfiles[name];
       var sign = bal.net>0?'+':'';
       var reactionLabel = reactionSummaryLabel(name);
@@ -2086,6 +2300,7 @@
           '<span class="pill '+gradeClass+'">'+grade.label+'</span>'+
         '</div>'+
         (meta.length? '<div class="profile-meta">'+meta.map(function(m){ return '<span>'+m+'</span>'; }).join('')+'</div>' : '')+
+        tagsHtml+
         '<div class="profile-meta"><span class="profile-settlement '+(bal.net>=0?'amt pos':'amt neg')+'">통합 정산 '+sign+won(bal.net)+'</span>'+(reactionLabel?('<span>'+escapeHtml(reactionLabel)+'</span>'):'<span class="hint" style="margin:0;">반응 기록 없음</span>')+'</div>'+
         '<div class="profile-actions">'+
           '<button type="button" class="ghost-btn btn-toggle-timeline">'+(expanded?'이력 접기':'이력 보기')+'</button>'+

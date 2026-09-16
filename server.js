@@ -104,7 +104,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log('봉투장부 로컬 서버 실행 중: http://localhost:' + PORT);
+  console.log('마음장부 로컬 서버 실행 중: http://localhost:' + PORT);
   if (supabase) {
     console.log('저장소: Supabase (' + SUPABASE_URL + ')');
   } else {

@@ -43,9 +43,17 @@ create table if not exists people (
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
   age text,
-  anniversary text,
+  anniversary text, -- 구버전 필드, birthday로 대체됨 (하위 호환용으로 남겨둠)
+  birthday text,
+  marital_status text default 'single',
+  wedding_anniversary text,
+  join_date text,
+  student_id text,
+  military_id text,
+  education text,
   workplace text,
   personality text,
+  personality_tags text[],
   recent_issue text,
   unique (user_id, name)
 );
