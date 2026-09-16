@@ -166,6 +166,7 @@
   .balance-row:last-child{border-bottom:none;}
   .balance-row .who{display:flex; align-items:center; gap:8px; min-width:0;}
   .balance-row .name{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .who-sub{font-weight:400; color:var(--ink-faint); font-size:.82em;}
   .balance-row .cnt{font-size:.75rem; color:var(--ink-faint); flex:none;}
   .balance-row .amt{font-variant-numeric:tabular-nums; font-weight:700; flex:none;}
   .amt.pos{color:var(--blue);}
@@ -1627,7 +1628,9 @@
         var cls = p.net>0 ? 'pos' : (p.net<0 ? 'neg' : '');
         var sign = p.net>0 ? '+' : (p.net<0 ? '' : '');
         var detail = '경조사비 '+(p.moneyNet>=0?'+':'')+won(p.moneyNet)+' · 선물 '+(p.giftNet>=0?'+':'')+won(p.giftNet);
-        return '<div class="balance-row"><div class="who"><span class="name">'+escapeHtml(p.name)+'</span><span class="cnt">'+p.count+'건 · '+detail+'</span></div><div class="amt '+cls+'">'+sign+won(p.net)+'</div></div>';
+        var prof = people.find(function(x){ return x.name===p.name; });
+        var idTag = prof && (prof.workplace || prof.age) ? '<span class="who-sub"> · '+escapeHtml(prof.workplace || (prof.age+'세'))+'</span>' : '';
+        return '<div class="balance-row"><div class="who"><span class="name">'+escapeHtml(p.name)+idTag+'</span><span class="cnt">'+p.count+'건 · '+detail+'</span></div><div class="amt '+cls+'">'+sign+won(p.net)+'</div></div>';
       }).join('');
     }
 
