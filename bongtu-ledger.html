@@ -28,6 +28,9 @@
     --tier-mid-tint:#F1E7CE;
     --tier-high:#7A4A82;
     --tier-high-tint:#EEE1F0;
+    --accent:#B8362B;
+    --accent-ink:#8F2A21;
+    --accent-tint:#F2DDD3;
     --shadow: 0 1px 2px rgba(43,38,34,.06), 0 6px 16px rgba(43,38,34,.08);
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -53,6 +56,9 @@
       --tier-mid-tint:#332A18;
       --tier-high:#C79FCE;
       --tier-high-tint:#2E2233;
+      --accent:#E17A6A;
+      --accent-ink:#F0A296;
+      --accent-tint:#3B241F;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
     }
   }
@@ -76,6 +82,9 @@
     --tier-mid-tint:#332A18;
     --tier-high:#C79FCE;
     --tier-high-tint:#2E2233;
+    --accent:#E17A6A;
+    --accent-ink:#F0A296;
+    --accent-tint:#3B241F;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box;}
@@ -109,7 +118,7 @@
   .status.live .dot{background:var(--blue);}
   .status.local .dot{background:var(--red);}
   .status.server .dot{background:var(--tier-basic);}
-  .status.gauth .dot{background:var(--tier-mid);}
+  .status.gauth .dot{background:var(--accent);}
 
   .headerRight{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
   .authbox{display:flex; align-items:center; gap:8px;}
@@ -134,7 +143,7 @@
     padding:10px 14px 12px; cursor:pointer; white-space:nowrap;
     border-bottom:2px solid transparent; margin-bottom:-1px;
   }
-  nav.tabs button.active{color:var(--red-ink); border-bottom-color:var(--red);}
+  nav.tabs button.active{color:var(--accent-ink); border-bottom-color:var(--accent);}
   nav.tabs button:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 
   section.panel{display:flex; flex-direction:column; gap:22px;}
@@ -165,7 +174,7 @@
 
   .stamp-btn{
     font-family:'Noto Serif KR', serif; font-weight:700; font-size:.92rem;
-    background:var(--red); color:#FBF3EC; border:2px solid var(--red-ink);
+    background:var(--accent); color:#FBF3EC; border:2px solid var(--accent-ink);
     border-radius:8px; padding:10px 18px; cursor:pointer;
     box-shadow:var(--shadow); transform:rotate(-.6deg);
     transition:transform .12s ease;
@@ -267,7 +276,7 @@
   .photo-row input[type=file]{flex:1; min-width:180px;}
 
   .manual{display:flex; flex-direction:column; gap:16px;}
-  .manual .m-item{border-left:3px solid var(--red); padding-left:14px;}
+  .manual .m-item{border-left:3px solid var(--accent); padding-left:14px;}
   .manual .m-item h3{font-size:1rem; margin-bottom:4px;}
   .manual .m-item p{margin:0; font-size:.88rem; color:var(--ink-soft);}
   .manual .m-item ol,.manual .m-item ul{margin:6px 0 0; padding-left:1.1em; font-size:.85rem; color:var(--ink-soft);}
@@ -301,7 +310,7 @@
   }
   .receipt .headline{text-align:center; margin-bottom:12px;}
   .receipt .headline .cap{font-size:.72rem; letter-spacing:.12em; color:var(--ink-soft);}
-  .receipt .headline .num{font-family:'Noto Serif KR',serif; font-size:2.1rem; font-weight:700; color:var(--red-ink); font-variant-numeric:tabular-nums;}
+  .receipt .headline .num{font-family:'Noto Serif KR',serif; font-size:2.1rem; font-weight:700; color:var(--accent-ink); font-variant-numeric:tabular-nums;}
   .receipt-line{display:flex; justify-content:space-between; gap:8px; font-size:.85rem; padding:6px 0; border-top:1px dashed var(--line-strong);}
   .receipt-line span:last-child{font-variant-numeric:tabular-nums; font-weight:600;}
   .receipt .note{font-size:.78rem; color:var(--ink-soft); margin-top:12px; padding-top:10px; border-top:1px dashed var(--line-strong);}
@@ -317,11 +326,29 @@
     background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.025) 0px, rgba(0,0,0,.025) 1.5px, transparent 1.5px, transparent 16px);
   }
   body[data-app-mode="secured"]{
-    background-image: radial-gradient(ellipse 900px 500px at 50% -60px, rgba(184,54,43,.06), transparent 70%);
+    --accent:#5B54E8;
+    --accent-ink:#3F39B5;
+    --accent-tint:#E9E7FC;
+    background-image: radial-gradient(ellipse 900px 500px at 50% -60px, rgba(91,84,232,.12), transparent 70%);
   }
-  .mode-badge{display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:.01em; white-space:nowrap;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) body[data-app-mode="secured"]{
+      --accent:#9C97FF;
+      --accent-ink:#C7C3FF;
+      --accent-tint:#2C2A57;
+      background-image: radial-gradient(ellipse 900px 500px at 50% -60px, rgba(156,151,255,.16), transparent 70%);
+    }
+  }
+  :root[data-theme="dark"] body[data-app-mode="secured"]{
+    --accent:#9C97FF;
+    --accent-ink:#C7C3FF;
+    --accent-tint:#2C2A57;
+    background-image: radial-gradient(ellipse 900px 500px at 50% -60px, rgba(156,151,255,.16), transparent 70%);
+  }
+  body[data-app-mode="secured"] header.top{ border-bottom-color: var(--accent); transition: border-color .4s ease; }
+  .mode-badge{display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:.01em; white-space:nowrap; transition:background .3s ease, color .3s ease, border-color .3s ease;}
   .mode-badge.test{background:transparent; color:var(--ink-faint); border:1px dashed var(--line-strong);}
-  .mode-badge.secured{background:var(--red-tint); color:var(--red-ink); border:1px solid var(--red);}
+  .mode-badge.secured{background:var(--accent-tint); color:var(--accent-ink); border:1px solid var(--accent); font-weight:800;}
   @keyframes ledgerUnlock{
     0%{ opacity:0; transform:translateY(8px) scale(.985); filter:blur(2px); }
     100%{ opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
@@ -1128,27 +1155,47 @@
       }
     } else {
       usingLocal = true;
-      var loadedFromServer = false;
-      try{
-        var res = await fetch('/api/data', {method:'GET'});
-        if(res.ok){
-          var data = await res.json();
-          entries = Array.isArray(data.entries) ? data.entries : [];
-          gifts = Array.isArray(data.gifts) ? data.gifts : [];
-          people = Array.isArray(data.people) ? data.people : [];
-          recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
-          storageMode = 'server';
-          loadedFromServer = true;
-        }
-      }catch(e){ /* no local server available */ }
-      if(loadedFromServer){
-        setStatus('server');
-      } else {
-        storageMode = 'local';
-        loadLocal(); loadLocalGifts(); loadLocalPeople(); loadLocalRecs();
-        setStatus('local');
+
+      // Google 로그인 세션이 있으면 그게 최우선 — 로컬/서버 폴백보다 먼저 확인해서
+      // 나중에 폴백 로직이 로그인 상태를 덮어쓰는 경쟁 상태(race condition)를 막는다.
+      var resolvedFromAuth = false;
+      if(sbClient){
+        try{
+          var sessionRes = await sbClient.auth.getSession();
+          if(sessionRes && sessionRes.data && sessionRes.data.session && sessionRes.data.session.user){
+            currentUser = sessionRes.data.session.user;
+            storageMode = 'supabaseAuth';
+            setStatus('gauth');
+            await loadSupabaseData();
+            renderAll();
+            resolvedFromAuth = true;
+          }
+        }catch(e){ /* 세션 확인 실패 시 아래 로컬/서버 폴백으로 진행 */ }
       }
-      renderAll();
+
+      if(!resolvedFromAuth){
+        var loadedFromServer = false;
+        try{
+          var res = await fetch('/api/data', {method:'GET'});
+          if(res.ok){
+            var data = await res.json();
+            entries = Array.isArray(data.entries) ? data.entries : [];
+            gifts = Array.isArray(data.gifts) ? data.gifts : [];
+            people = Array.isArray(data.people) ? data.people : [];
+            recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+            storageMode = 'server';
+            loadedFromServer = true;
+          }
+        }catch(e){ /* no local server available */ }
+        if(loadedFromServer){
+          setStatus('server');
+        } else {
+          storageMode = 'local';
+          loadLocal(); loadLocalGifts(); loadLocalPeople(); loadLocalRecs();
+          setStatus('local');
+        }
+        renderAll();
+      }
     }
     updateAuthUI();
   }
