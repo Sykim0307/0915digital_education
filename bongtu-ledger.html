@@ -132,6 +132,17 @@
   .authbox .g-user strong{color:var(--ink);}
   .authbox .g-logout-btn{background:none; border:none; color:var(--ink-faint); font-size:.76rem; text-decoration:underline; cursor:pointer;}
 
+  .login-nudge{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    background:var(--blue-tint); border:1px solid var(--blue); border-radius:12px;
+    padding:14px 16px; margin-bottom:16px;
+  }
+  .login-nudge-text{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .login-nudge-text strong{color:var(--blue); font-family:'Noto Serif KR',serif; font-size:1rem;}
+  .login-nudge-text span{font-size:.82rem; color:var(--ink-soft);}
+  .login-nudge-actions{display:flex; align-items:center; gap:6px; flex:none;}
+  .login-nudge-actions #btnLoginNudgeDismiss{border:none; background:none; padding:6px 8px; color:var(--ink-faint);}
+
   nav.tabs{
     display:flex; flex-wrap:wrap; gap:4px; margin:18px 0 22px;
     border-bottom:1px solid var(--line);
@@ -143,7 +154,16 @@
     padding:10px 14px 12px; cursor:pointer; white-space:nowrap;
     border-bottom:2px solid transparent; margin-bottom:-1px;
   }
-  nav.tabs button.active{color:var(--accent-ink); border-bottom-color:var(--accent);}
+  /* 탭을 모니터링(대시보드)·관리(사람 프로필)·기록(경조사비/선물)·도구(계산기/도움말) 색으로 구분 */
+  nav.tabs button[data-group="monitor"]{color:var(--ink-soft);}
+  nav.tabs button[data-group="people"]{color:var(--blue); opacity:.8;}
+  nav.tabs button[data-group="record"]{color:var(--tier-basic); opacity:.8;}
+  nav.tabs button[data-group="tool"]{color:var(--tier-mid); opacity:.8;}
+  nav.tabs button.active{opacity:1;}
+  nav.tabs button[data-group="monitor"].active{color:var(--ink); border-bottom-color:var(--ink);}
+  nav.tabs button[data-group="people"].active{color:var(--blue); border-bottom-color:var(--blue);}
+  nav.tabs button[data-group="record"].active{color:var(--tier-basic); border-bottom-color:var(--tier-basic);}
+  nav.tabs button[data-group="tool"].active{color:var(--tier-mid); border-bottom-color:var(--tier-mid);}
   nav.tabs button:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 
   section.panel{display:flex; flex-direction:column; gap:22px;}
@@ -377,17 +397,26 @@
   </header>
 
   <nav class="tabs" role="tablist">
-    <button data-tab="dash" class="active" role="tab" aria-selected="true">대시보드</button>
-    <button data-tab="records" role="tab" aria-selected="false">경조사비 기록</button>
-    <button data-tab="parse" role="tab" aria-selected="false">입출금 문자로 기록</button>
-    <button data-tab="calc" role="tab" aria-selected="false">봉투 계산기</button>
-    <button data-tab="gift" role="tab" aria-selected="false">기프티콘</button>
-    <button data-tab="people" role="tab" aria-selected="false">사람 프로필</button>
-    <button data-tab="help" role="tab" aria-selected="false">도움말</button>
+    <button data-tab="dash" data-group="monitor" class="active" role="tab" aria-selected="true">대시보드</button>
+    <button data-tab="people" data-group="people" role="tab" aria-selected="false">사람 프로필</button>
+    <button data-tab="records" data-group="record" role="tab" aria-selected="false">경조사비 기록</button>
+    <button data-tab="gift" data-group="record" role="tab" aria-selected="false">선물 기록</button>
+    <button data-tab="calc" data-group="tool" role="tab" aria-selected="false">봉투 계산기</button>
+    <button data-tab="help" data-group="tool" role="tab" aria-selected="false">도움말</button>
   </nav>
 
   <!-- DASHBOARD -->
   <section class="panel" id="tab-dash">
+    <div class="login-nudge" id="loginNudge" hidden>
+      <div class="login-nudge-text">
+        <strong>지금은 테스트 모드예요</strong>
+        <span>이 브라우저에만 저장되고 있어요. Google 계정으로 로그인하면 내 장부를 안전하게 보관하고, 어느 기기에서든 로그인만 하면 이어서 관리할 수 있어요.</span>
+      </div>
+      <div class="login-nudge-actions">
+        <button type="button" class="stamp-btn" id="btnLoginNudge">Google로 로그인</button>
+        <button type="button" class="ghost-btn" id="btnLoginNudgeDismiss" aria-label="닫기">✕</button>
+      </div>
+    </div>
     <div class="tiles">
       <div class="tile red"><div class="label">경조사비 나간 금액</div><div class="value" id="tileGave">₩0</div></div>
       <div class="tile blue"><div class="label">경조사비 받은 금액</div><div class="value" id="tileRecv">₩0</div></div>
@@ -426,9 +455,45 @@
           <option value="">전체 사람</option>
         </select>
       </div>
-      <button class="stamp-btn" id="btnNewEntry" type="button">＋ 새 기록</button>
+      <div class="chiprow">
+        <button class="ghost-btn" id="btnRecordsParseToggle" type="button">입출금 문자로 추가</button>
+        <button class="stamp-btn" id="btnNewEntry" type="button">＋ 새 기록</button>
+      </div>
     </div>
     <p class="hint">표의 행을 누르면 그 기록의 상세 내용을 볼 수 있어요.</p>
+
+    <div id="recordsParseBox" hidden>
+      <p class="hint">은행 입출금 알림 문자를 그대로 붙여넣으면 금액·이름·입출금 여부를 추정해 드려요. 이미지 캡처 인식(OCR)은 지원하지 않으며, 텍스트 붙여넣기만 지원해요.</p>
+      <div class="example">예시)
+[Web발신]
+국민은행 입금 50,000원
+홍길동
+09/15 14:23 잔액 320,500원</div>
+      <textarea id="parseInput" placeholder="여기에 문자 내용을 붙여넣으세요"></textarea>
+      <div class="formactions" style="justify-content:flex-start">
+        <button class="stamp-btn" type="button" id="btnParse">분석하기</button>
+      </div>
+      <div class="parse-result" id="parseResult">
+        <label>추정 이름
+          <input type="text" id="p_person" maxlength="30">
+        </label>
+        <label>추정 금액 (원)
+          <input type="text" inputmode="numeric" id="p_amount">
+        </label>
+        <label>추정 구분
+          <div class="radiorow">
+            <label><input type="radio" name="p_dir" value="gave"> 냈어요</label>
+            <label class="recv"><input type="radio" name="p_dir" value="received" checked> 받았어요</label>
+          </div>
+        </label>
+        <label>날짜
+          <input type="date" id="p_date">
+        </label>
+        <div class="formactions full" style="grid-column:1/-1">
+          <button type="button" class="stamp-btn" id="btnUseParsed">이 내용으로 기록 추가</button>
+        </div>
+      </div>
+    </div>
 
     <form class="card" id="entryForm" hidden>
       <label class="full">이름
@@ -786,41 +851,6 @@
     </form>
   </section>
 
-  <!-- PARSE -->
-  <section class="panel" id="tab-parse" hidden>
-    <h2 class="section-title">입출금 문자로 빠르게 기록하기</h2>
-    <p class="hint">은행 입출금 알림 문자를 그대로 붙여넣으면 금액·이름·입출금 여부를 추정해 드려요. 이미지 캡처 인식(OCR)은 지원하지 않으며, 텍스트 붙여넣기만 지원해요.</p>
-    <div class="example">예시)
-[Web발신]
-국민은행 입금 50,000원
-홍길동
-09/15 14:23 잔액 320,500원</div>
-    <textarea id="parseInput" placeholder="여기에 문자 내용을 붙여넣으세요"></textarea>
-    <div class="formactions" style="justify-content:flex-start">
-      <button class="stamp-btn" type="button" id="btnParse">분석하기</button>
-    </div>
-    <div class="parse-result" id="parseResult">
-      <label>추정 이름
-        <input type="text" id="p_person" maxlength="30">
-      </label>
-      <label>추정 금액 (원)
-        <input type="text" inputmode="numeric" id="p_amount">
-      </label>
-      <label>추정 구분
-        <div class="radiorow">
-          <label><input type="radio" name="p_dir" value="gave"> 냈어요</label>
-          <label class="recv"><input type="radio" name="p_dir" value="received" checked> 받았어요</label>
-        </div>
-      </label>
-      <label>날짜
-        <input type="date" id="p_date">
-      </label>
-      <div class="formactions full" style="grid-column:1/-1">
-        <button type="button" class="stamp-btn" id="btnUseParsed">이 내용으로 기록 추가</button>
-      </div>
-    </div>
-  </section>
-
   <!-- HELP -->
   <section class="panel" id="tab-help" hidden>
     <h2 class="section-title">사용 가이드</h2>
@@ -834,6 +864,17 @@
         </ul>
       </div>
       <div class="m-item">
+        <h3>사람 프로필 — 프로필 만들기</h3>
+        <ul>
+          <li>이름·나이·직장·학력·좋아하는 것(성향 태그)·최근 소식을 적어두면 프로필 카드가 만들어져요</li>
+          <li>이름을 입력하면 등록된 명단에서 자동으로 찾아주고, 직장·부서도 자동으로 채워져요</li>
+          <li>생일·결혼기념일·입사일을 등록해두면 다가오는 날짜를 미리 알려드려요</li>
+          <li>주고받은 금액을 따져서 화이트리스트(내가 더 받은 사이)·블랙리스트(내가 더 챙겨준 사이)로 자동 분류해드려요</li>
+          <li>그동안 주고받은 기록도 시간순으로 모아볼 수 있어요</li>
+          <li>프로필의 "삭제"를 누르면 그 프로필을 지울 수 있어요 (이름을 잘못 입력했을 때 유용해요)</li>
+        </ul>
+      </div>
+      <div class="m-item">
         <h3>경조사비 기록 — 경조사비 입력하기</h3>
         <p>결혼식·장례식·돌잔치처럼 경조사비를 주고받을 때마다 여기에 남겨두세요.</p>
         <ol>
@@ -841,13 +882,10 @@
           <li>이름·날짜·경조사 종류·금액·냈는지 받았는지를 입력해요</li>
           <li>친한 정도와 그때 느낌(좋음/보통/별로)도 같이 남겨두면, 계산기랑 사람 탭에서 더 요긴하게 써먹을 수 있어요</li>
         </ol>
+        <p>은행에서 온 입출금 알림 문자를 그대로 붙여넣고 싶다면, 같은 탭 안의 "입출금 문자로 추가"를 눌러보세요 — 금액·이름·입금인지 출금인지를 자동으로 알아채서 채워드려요.</p>
       </div>
       <div class="m-item">
-        <h3>봉투 계산기 — 얼마 낼지 고민될 때</h3>
-        <p>이름만 입력하면, 예전에 그 사람에게 받았던 금액과 친한 정도를 참고해서 적당한 금액을 추천해드려요.</p>
-      </div>
-      <div class="m-item">
-        <h3>기프티콘 — 주고받은 선물 기록하기</h3>
+        <h3>선물 기록 — 주고받은 선물 기록하기</h3>
         <ul>
           <li>"＋ 새 선물 기록"으로 직접 입력하거나, 카톡 대화 내용을 붙여넣으면 자동으로 채워드려요</li>
           <li>캡처 화면이나 영수증 사진이 있으면 "사진 분석하기"로 사진 속 쿠폰명·가격을 자동으로 읽어드려요</li>
@@ -857,18 +895,8 @@
         </ul>
       </div>
       <div class="m-item">
-        <h3>사람 프로필 — 프로필 만들기</h3>
-        <ul>
-          <li>이름·나이·직장·학력·좋아하는 것(성향 태그)·최근 소식을 적어두면 프로필 카드가 만들어져요</li>
-          <li>이름을 입력하면 등록된 명단에서 자동으로 찾아주고, 직장·부서도 자동으로 채워져요</li>
-          <li>생일·결혼기념일·입사일을 등록해두면 다가오는 날짜를 미리 알려드려요</li>
-          <li>주고받은 금액을 따져서 화이트리스트(내가 더 받은 사이)·블랙리스트(내가 더 챙겨준 사이)로 자동 분류해드려요</li>
-          <li>그동안 주고받은 기록도 시간순으로 모아볼 수 있어요</li>
-        </ul>
-      </div>
-      <div class="m-item">
-        <h3>입출금 문자로 빠르게 기록하기</h3>
-        <p>은행에서 온 입출금 알림 문자를 그대로 붙여넣으면, 금액·이름·입금인지 출금인지를 자동으로 알아채서 기록에 추가해드려요.</p>
+        <h3>봉투 계산기 — 얼마 낼지 고민될 때</h3>
+        <p>이름만 입력하면, 예전에 그 사람에게 받았던 금액과 친한 정도를 참고해서 적당한 금액을 추천해드려요.</p>
       </div>
       <div class="m-item">
         <h3>내 기록은 안전하게 보관되나요?</h3>
@@ -1106,6 +1134,11 @@
     recommendations = (results[3].data || []).map(rowToRec);
   }
 
+  function triggerGoogleLogin(){
+    if(!sbClient) return;
+    sbClient.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href.split('#')[0] } });
+  }
+
   function updateAuthUI(){
     var box = document.getElementById('authBox');
     if(!sbClient || storageMode==='cloud'){ box.hidden = true; return; }
@@ -1115,11 +1148,21 @@
       document.getElementById('btnGoogleLogout').addEventListener('click', function(){ sbClient.auth.signOut(); });
     } else {
       box.innerHTML = '<button type="button" class="g-login-btn" id="btnGoogleLogin"><span class="g-icon">G</span>Google로 로그인</button>';
-      document.getElementById('btnGoogleLogin').addEventListener('click', function(){
-        sbClient.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href.split('#')[0] } });
-      });
+      document.getElementById('btnGoogleLogin').addEventListener('click', triggerGoogleLogin);
     }
   }
+
+  function isLoginNudgeDismissed(){
+    try{ return sessionStorage.getItem('bongtu_login_nudge_dismissed')==='1'; }catch(e){ return false; }
+  }
+  function updateLoginNudge(appMode){
+    document.getElementById('loginNudge').hidden = !(appMode==='test' && sbClient && !isLoginNudgeDismissed());
+  }
+  document.getElementById('btnLoginNudge').addEventListener('click', triggerGoogleLogin);
+  document.getElementById('btnLoginNudgeDismiss').addEventListener('click', function(){
+    try{ sessionStorage.setItem('bongtu_login_nudge_dismissed','1'); }catch(e){}
+    document.getElementById('loginNudge').hidden = true;
+  });
 
   async function handleAuthChange(session){
     if(storageMode === 'cloud'){ updateAuthUI(); return; }
@@ -1215,6 +1258,7 @@
     var appMode = (mode==='gauth') ? 'secured' : (mode==='live') ? 'cloud' : 'test';
     var wasSecured = document.body.getAttribute('data-app-mode') === 'secured';
     document.body.setAttribute('data-app-mode', appMode);
+    updateLoginNudge(appMode);
     var badge = document.getElementById('modeBadge');
     if(appMode==='secured'){
       badge.hidden = false;
@@ -1469,6 +1513,29 @@
     return true;
   }
 
+  async function deletePerson(name){
+    var existing = people.find(function(p){ return p.name===name; });
+    if(!existing) return;
+    if(db && !usingLocal){
+      await db.doc('people/'+existing.id).delete();
+    } else if(storageMode==='supabaseAuth'){
+      var res = await sbClient.from('people').delete().eq('id', existing.id);
+      if(checkSbError(res, '프로필 삭제')) return;
+      people = people.filter(function(p){ return p.id!==existing.id; });
+      renderAll();
+    } else {
+      people = people.filter(function(p){ return p.id!==existing.id; });
+      saveLocalPeople();
+      persistNow();
+      renderAll();
+    }
+    if(editingPersonName===name){
+      resetPersonForm();
+      document.getElementById('personForm').hidden = true;
+      renderProfiles();
+    }
+  }
+
   async function addRecommendationFeedback(person, tier, helpful, advice){
     var data = {person:person, tier:tier, helpful:helpful, advice:advice, createdAt:Date.now()};
     if(db && !usingLocal){
@@ -1492,7 +1559,7 @@
     btn.addEventListener('click', function(){
       tabButtons.forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
       btn.classList.add('active'); btn.setAttribute('aria-selected','true');
-      ['dash','records','calc','gift','people','parse','help'].forEach(function(id){
+      ['dash','records','calc','gift','people','help'].forEach(function(id){
         document.getElementById('tab-'+id).hidden = (id!==btn.dataset.tab);
       });
     });
@@ -1903,6 +1970,10 @@
     document.getElementById('f_date').value = todayStr();
     document.getElementById('f_person').focus();
   });
+  document.getElementById('btnRecordsParseToggle').addEventListener('click', function(){
+    var box = document.getElementById('recordsParseBox');
+    box.hidden = !box.hidden;
+  });
   document.getElementById('btnCancelEntry').addEventListener('click', function(){
     editingEntryId = null;
     entryForm.reset();
@@ -1939,6 +2010,7 @@
 
   function prefillEntryForm(data){
     goTab('records');
+    document.getElementById('recordsParseBox').hidden = true;
     entryForm.hidden = false;
     document.getElementById('f_person').value = data.person || '';
     document.getElementById('f_date').value = data.date || todayStr();
@@ -2423,6 +2495,7 @@
         '<div class="profile-actions">'+
           '<button type="button" class="ghost-btn btn-toggle-timeline">'+(expanded?'이력 접기':'이력 보기')+'</button>'+
           '<button type="button" class="ghost-btn btn-edit-person">편집</button>'+
+          (p.id ? '<button type="button" class="ghost-btn btn-delete-person">삭제</button>' : '')+
         '</div>'+
         (expanded? '<div class="timeline">'+personTimelineHtml(name)+'</div>' : '')+
       '</div>';
@@ -2438,6 +2511,14 @@
     list.querySelectorAll('.btn-edit-person').forEach(function(btn){
       btn.addEventListener('click', function(){
         editPerson(btn.closest('.profile-card').dataset.person);
+      });
+    });
+    list.querySelectorAll('.btn-delete-person').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var name = btn.closest('.profile-card').dataset.person;
+        if(confirm('"'+name+'" 프로필을 삭제할까요? (이름·나이 등 등록해둔 프로필 정보만 지워지고, 경조사비·선물 기록은 남아있어요)')){
+          deletePerson(name);
+        }
       });
     });
 
