@@ -237,7 +237,7 @@
   .giftbar-row{display:flex; flex-direction:column; gap:6px; padding:12px 14px; border-bottom:1px solid var(--line);}
   .giftbar-row:last-child{border-bottom:none;}
   .giftbar-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
-  .giftbar-top .name{font-weight:600;}
+  .giftbar-top .name{font-weight:600; overflow-wrap:anywhere; min-width:0;}
   .warn-chip{font-size:.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--red-tint); color:var(--red-ink); white-space:nowrap;}
   .giftbar{display:flex; align-items:center; gap:8px; font-size:.72rem; color:var(--ink-soft);}
   .giftbar .glabel{width:32px; flex:none;}
@@ -248,10 +248,12 @@
   .legend .sw{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:middle;}
   .expiry-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 14px; border-bottom:1px solid var(--line);}
   .expiry-row:last-child{border-bottom:none;}
-  .expiry-row .dleft{font-weight:700; font-variant-numeric:tabular-nums;}
-  .expiry-row .dleft.soon{color:var(--red-ink);}
+  .expiry-row > div:first-child{overflow-wrap:anywhere; min-width:0;}
+  .dleft{font-weight:700; font-variant-numeric:tabular-nums; flex:none;}
+  .dleft.soon{color:var(--red-ink);}
   .anniv-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 14px; border-bottom:1px solid var(--line);}
   .anniv-row:last-child{border-bottom:none;}
+  .anniv-row > div:first-child{overflow-wrap:anywhere; min-width:0;}
 
   .pill.grade-white{background:var(--blue-tint); color:var(--blue);}
   .pill.grade-black{background:var(--red-tint); color:var(--red-ink);}
@@ -260,8 +262,8 @@
   .profile-list{display:flex; flex-direction:column; gap:10px;}
   .profile-card{background:var(--paper-raised); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow);}
   .profile-top{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
-  .profile-top .name{font-family:'Noto Serif KR',serif; font-size:1.1rem; font-weight:700;}
-  .profile-meta{display:flex; gap:12px; flex-wrap:wrap; font-size:.8rem; color:var(--ink-soft); margin-top:4px;}
+  .profile-top .name{font-family:'Noto Serif KR',serif; font-size:1.1rem; font-weight:700; overflow-wrap:anywhere; min-width:0;}
+  .profile-meta{display:flex; gap:12px; flex-wrap:wrap; font-size:.8rem; color:var(--ink-soft); margin-top:4px; overflow-wrap:anywhere;}
   .profile-meta span strong{color:var(--ink); font-weight:600;}
   .profile-settlement{font-variant-numeric:tabular-nums; font-weight:700; font-size:1.05rem;}
   .profile-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
@@ -314,6 +316,7 @@
   .receipt-line{display:flex; justify-content:space-between; gap:8px; font-size:.85rem; padding:6px 0; border-top:1px dashed var(--line-strong);}
   .receipt-line span:last-child{font-variant-numeric:tabular-nums; font-weight:600;}
   .receipt .note{font-size:.78rem; color:var(--ink-soft); margin-top:12px; padding-top:10px; border-top:1px dashed var(--line-strong);}
+  .calc-formula{font-size:.78rem; color:var(--ink-soft); margin-top:10px; padding:10px 12px; background:var(--paper-alt); border-radius:8px; line-height:1.55;}
 
   .parse-result{background:var(--paper-raised); border:1px solid var(--line); border-radius:10px; padding:16px; box-shadow:var(--shadow); display:none; gap:12px; grid-template-columns:1fr 1fr;}
   .parse-result.show{display:grid;}
@@ -393,9 +396,15 @@
     </div>
 
     <div>
-      <h2 class="section-title">통합 정산 (경조사비 + 선물)</h2>
+      <div class="toprow"><h2 class="section-title" style="flex:1">통합 정산 (경조사비 + 선물)</h2></div>
       <p class="hint">선물은 실제 가격을 입력했으면 그 값을, 없으면 가격대(실속형 1만·중가 3만·고가 7만원)로 환산해 경조사비와 함께 합산한 값이에요.</p>
-      <div class="balance-list" id="balanceList"></div>
+      <div class="chiprow" id="balanceSortChips">
+        <button class="ghost-btn active" data-sort="diff">차이 큰 순</button>
+        <button class="ghost-btn" data-sort="recv">많이 받은 순</button>
+        <button class="ghost-btn" data-sort="gave">많이 챙겨준 순</button>
+        <button class="ghost-btn" data-sort="recent">최근 순</button>
+      </div>
+      <div class="balance-list" id="balanceList" style="margin-top:8px;"></div>
     </div>
 
     <div>
@@ -421,7 +430,7 @@
 
     <form class="card" id="entryForm" hidden>
       <label class="full">이름
-        <input type="text" id="f_person" list="personList" required placeholder="예: 김민수">
+        <input type="text" id="f_person" list="personList" required maxlength="30" placeholder="예: 김민수">
         <datalist id="personList"></datalist>
       </label>
       <label>날짜
@@ -478,7 +487,7 @@
 
     <div class="table-wrap">
       <table id="recordsTable">
-        <thead><tr><th>날짜</th><th>이름</th><th>유형</th><th>구분</th><th>친밀도</th><th style="text-align:right">금액</th><th>상호</th><th></th></tr></thead>
+        <thead><tr><th>날짜</th><th>이름</th><th>유형</th><th>구분</th><th>친밀도</th><th style="text-align:right">금액</th><th title="상대방도 저에게 경조사비를 낸 적이 있는지 여부">상호교환</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -491,7 +500,7 @@
     <div class="calc-grid">
       <form class="card" id="calcForm" style="grid-template-columns:1fr;">
         <label>이름 (선택 — 과거 받은 금액 자동 조회)
-          <input type="text" id="c_person" list="personList" placeholder="예: 김민수">
+          <input type="text" id="c_person" list="personList" maxlength="30" placeholder="예: 김민수">
         </label>
         <label>경조사 유형
           <select id="c_type">
@@ -528,7 +537,8 @@
         <div class="receipt-line"><span>기준 시세</span><span id="calcBase">₩50,000</span></div>
         <div class="receipt-line"><span>친밀도 보정</span><span id="calcCloseness">×1.0</span></div>
         <div class="receipt-line"><span>과거 받은 금액 반영</span><span id="calcPast">—</span></div>
-        <div class="note">결혼·부고는 5만~10만원대, 돌잔치·개업은 3만~5만원대가 일반적인 시세이며, 친밀도와 과거 수수 내역에 따라 보정한 값이에요. 최종 결정은 본인 상황에 맞게 조정하세요.</div>
+        <div class="calc-formula" id="calcFormula"></div>
+        <div class="note">결혼·부고는 5만~10만원대, 돌잔치·개업은 3만~5만원대가 일반적인 시세예요. 최종 결정은 본인 상황에 맞게 조정하세요.</div>
       </div>
     </div>
   </section>
@@ -571,6 +581,11 @@
         <select id="giftPersonFilter" style="width:auto; display:inline-block; padding:6px 12px; border-radius:20px;">
           <option value="">전체 사람</option>
         </select>
+        <select id="giftSort" style="width:auto; display:inline-block; padding:6px 12px; border-radius:20px;">
+          <option value="date">최신 날짜순</option>
+          <option value="price_desc">가격 높은순</option>
+          <option value="price_asc">가격 낮은순</option>
+        </select>
       </div>
       <div class="chiprow">
         <button class="ghost-btn" id="btnGiftParseToggle" type="button">카톡 텍스트로 추가</button>
@@ -595,7 +610,7 @@
       <div class="ai-box" id="giftAiStatus" hidden></div>
       <div class="parse-result" id="giftParseResult">
         <label>추정 이름
-          <input type="text" id="gp_person">
+          <input type="text" id="gp_person" maxlength="30">
         </label>
         <label>추정 쿠폰명
           <input type="text" id="gp_name">
@@ -624,7 +639,7 @@
 
     <form class="card" id="giftForm" hidden>
       <label class="full">이름
-        <input type="text" id="g_person" list="personList" required placeholder="예: 오정화">
+        <input type="text" id="g_person" list="personList" required maxlength="30" placeholder="예: 오정화">
       </label>
       <label class="full">구분
         <div class="radiorow">
@@ -688,7 +703,7 @@
     <p class="hint">나이·생일·결혼기념일·입사일·학력·성향 태그·최근 이슈를 기록해두면 화이트/블랙리스트 분류와 기념일 알림에 활용돼요. 프로필 카드의 "편집"을 누르면 여기서 수정할 수 있어요. 이름과 직장/소속 칸은 입력하면 사내 명단에서 자동완성돼요(예: "김" 입력 시 김씨 목록이 드롭다운으로 펼쳐져요).</p>
     <form class="card" id="personForm">
       <label class="full">이름
-        <input type="text" id="pp_name" list="personList" required placeholder="예: 오정화">
+        <input type="text" id="pp_name" list="personList" required maxlength="30" placeholder="예: 오정화">
       </label>
       <label>나이 (선택)
         <input type="text" inputmode="numeric" id="pp_age" placeholder="예: 29">
@@ -773,7 +788,7 @@
     </div>
     <div class="parse-result" id="parseResult">
       <label>추정 이름
-        <input type="text" id="p_person">
+        <input type="text" id="p_person" maxlength="30">
       </label>
       <label>추정 금액 (원)
         <input type="text" inputmode="numeric" id="p_amount">
@@ -795,94 +810,70 @@
 
   <!-- HELP -->
   <section class="panel" id="tab-help" hidden>
-    <h2 class="section-title">일러두기 — 사용법</h2>
+    <h2 class="section-title">사용 가이드</h2>
     <div class="manual">
       <div class="m-item">
-        <h3>대시보드</h3>
-        <p>경조사비와 선물을 합친 전체 현황을 한눈에 봐요.</p>
+        <h3>대시보드 — 전체 현황 한눈에 보기</h3>
+        <p>경조사비랑 선물을 따로따로 기억할 필요 없이, 여기서 전체 현황을 한 번에 확인할 수 있어요.</p>
         <ul>
-          <li>상단 타일: 경조사비로 나간/받은 금액, 선물을 금액으로 환산한 순잔액, 이 둘을 합친 <strong>총 정산금액</strong></li>
-          <li>"통합 정산" 목록: 사람별로 경조사비+선물을 합쳐서 누구에게 더 받았는지/줬는지 확인</li>
+          <li>상단 숫자: 지금까지 낸 돈, 받은 돈, 선물까지 다 합친 <strong>총 정산금액</strong></li>
+          <li>아래 목록: 사람별로 내가 더 받았는지, 더 챙겨줬는지 한눈에 확인</li>
         </ul>
       </div>
       <div class="m-item">
-        <h3>기록 (경조사비)</h3>
+        <h3>기록 — 경조사비 입력하기</h3>
+        <p>결혼식·장례식·돌잔치처럼 경조사비를 주고받을 때마다 여기에 남겨두세요.</p>
         <ol>
-          <li>"＋ 새 기록"을 눌러 이름·날짜·경조사 유형·금액·구분(냈어요/받았어요)을 입력</li>
-          <li>친밀도와 반응(선택)을 남기면 계산기·화이트/블랙리스트 분류에 반영돼요</li>
+          <li>"＋ 새 기록"을 눌러요</li>
+          <li>이름·날짜·경조사 종류·금액·냈는지 받았는지를 입력해요</li>
+          <li>친한 정도와 그때 느낌(좋음/보통/별로)도 같이 남겨두면, 계산기랑 사람 탭에서 더 요긴하게 써먹을 수 있어요</li>
         </ol>
       </div>
       <div class="m-item">
-        <h3>계산기</h3>
-        <p>이름을 입력하면 과거에 그 사람에게 받은 금액을 자동으로 찾아 반영해서, 경조사 유형·친밀도에 맞는 추천 금액을 계산해요.</p>
+        <h3>계산기 — 얼마 낼지 고민될 때</h3>
+        <p>이름만 입력하면, 예전에 그 사람에게 받았던 금액과 친한 정도를 참고해서 적당한 금액을 추천해드려요.</p>
       </div>
       <div class="m-item">
-        <h3>기프티콘</h3>
+        <h3>기프티콘 — 주고받은 선물 기록하기</h3>
         <ul>
-          <li>"＋ 새 선물 기록"으로 직접 입력하거나, "카톡 텍스트로 추가"에서 대화를 붙여넣어 <strong>분석하기</strong>(규칙 기반)로 자동 채우기</li>
-          <li>카톡 캡처나 영수증 사진이 있으면 "사진 분석하기"로 AI가 쿠폰명·가격을 읽어드려요 (claude.ai에서 열었을 때만 동작)</li>
-          <li><strong>실제 가격</strong>을 알고 있으면 직접 입력할 수 있고, 쿠폰명이 스타벅스 아메리카노 같은 잘 알려진 상품이면 자동으로 가격을 채워드려요 (실시간 인터넷 조회가 아니라 내장된 참고 가격표예요, 목록에 없으면 직접 입력)</li>
-          <li>실제 가격을 입력한 선물은 정산·통합 잔액 계산에도 가격대 대신 그 값이 그대로 반영돼요</li>
-          <li>받은 선물은 표에서 "사용" 체크박스로 사용 여부를 표시하고, 유효기간이 14일 이내로 다가오면 상단에 경고가 떠요</li>
-          <li>목록 위 필터로 <strong>사람</strong>·<strong>보낸 것/받은 것</strong> 기준으로 골라볼 수 있어요</li>
+          <li>"＋ 새 선물 기록"으로 직접 입력하거나, 카톡 대화 내용을 붙여넣으면 자동으로 채워드려요</li>
+          <li>캡처 화면이나 영수증 사진이 있으면 "사진 분석하기"로 사진 속 쿠폰명·가격을 자동으로 읽어드려요</li>
+          <li>실제 가격을 알고 있으면 직접 입력해두세요. 스타벅스 아메리카노처럼 잘 알려진 상품은 가격이 자동으로 채워져요 (목록에 없는 상품은 직접 입력해주세요)</li>
+          <li>받은 선물은 "사용" 체크박스로 표시해두고, 유효기간이 얼마 안 남으면 미리 알려드려요</li>
+          <li>목록 위 필터로 사람별, 보낸 것/받은 것으로 골라볼 수 있어요</li>
         </ul>
       </div>
       <div class="m-item">
-        <h3>사람</h3>
+        <h3>사람 — 프로필 만들기</h3>
         <ul>
-          <li>이름·나이·직장·학력·성향 태그·최근 이슈를 등록해두면 프로필 카드가 생겨요</li>
-          <li>이름·직장/소속 칸은 등록된 사내 명단(이름·부서)을 바탕으로 자동완성돼요. 명단에 있는 이름을 입력하면 직장/소속 칸이 비어있을 때 부서명이 자동으로 채워져요</li>
-          <li>생일·결혼기념일(기혼 체크 시)·입사일을 등록하면 "기념일 &amp; 답례 알림"에서 30일 이내 다가오는 기념일을 종류별로 알려줘요</li>
-          <li>학번·군번은 참고용 메모예요 (예: 소개팅, 동문 모임 등에서 활용)</li>
-          <li><strong>화이트/블랙리스트</strong>는 통합 정산 금액 기준이에요 — 내가 받은 게 3만원 이상 많으면 화이트, 내가 챙겨준 게 3만원 이상 많으면 블랙, 그 사이면 보통</li>
-          <li><strong>내 반응</strong>(좋음/보통/별로)은 라벨링과 별개로 기록에 남긴 평가의 평균으로 따로 표시돼요</li>
-          <li>주고받은 이력 타임라인도 확인할 수 있어요</li>
+          <li>이름·나이·직장·학력·좋아하는 것(성향 태그)·최근 소식을 적어두면 프로필 카드가 만들어져요</li>
+          <li>이름을 입력하면 등록된 명단에서 자동으로 찾아주고, 직장·부서도 자동으로 채워져요</li>
+          <li>생일·결혼기념일·입사일을 등록해두면 다가오는 날짜를 미리 알려드려요</li>
+          <li>주고받은 금액을 따져서 화이트리스트(내가 더 받은 사이)·블랙리스트(내가 더 챙겨준 사이)로 자동 분류해드려요</li>
+          <li>그동안 주고받은 기록도 시간순으로 모아볼 수 있어요</li>
         </ul>
       </div>
       <div class="m-item">
-        <h3>입출금 문자</h3>
-        <p>은행 알림 문자를 붙여넣고 분석하기를 누르면 금액·이름·입출금 여부를 자동 인식해 경조사비 기록에 추가해요.</p>
+        <h3>입출금 문자로 빠르게 기록하기</h3>
+        <p>은행에서 온 입출금 알림 문자를 그대로 붙여넣으면, 금액·이름·입금인지 출금인지를 자동으로 알아채서 기록에 추가해드려요.</p>
       </div>
       <div class="m-item">
-        <h3>데이터는 어디에 저장되나요?</h3>
-        <p>이 화면은 세 가지 저장 방식 중 하나로 동작하고, 화면 오른쪽 위 상태 표시로 어떤 방식인지 확인할 수 있어요.</p>
-        <ul>
-          <li><strong>이 기기·계정에 동기화됨</strong> — claude.ai 계정으로 Artifact 링크를 열었을 때. 기기 간 동기화됨</li>
-          <li><strong>이 폴더의 data.json에 저장됨</strong> — 아래 "로컬 서버로 실행하기"로 열었을 때. 프로젝트 폴더의 data.json 파일에 자동 저장됨</li>
-          <li><strong>이 브라우저에만 저장됨</strong> — HTML 파일을 그냥 더블클릭해서 열었을 때. 그 브라우저에만 남고 파일로는 저장되지 않음</li>
-        </ul>
+        <h3>내 기록은 안전하게 보관되나요?</h3>
+        <p>로그인해서 사용하면 어떤 기기에서 열어도 같은 기록을 이어서 볼 수 있어요. 로그인하지 않아도 지금처럼 그대로 사용할 수 있고, 이 경우 기록은 지금 쓰고 있는 이 화면에만 남아요.</p>
       </div>
       <div class="m-item">
-        <h3>로컬 서버로 실행하기 (프로젝트 폴더의 data.json 자동 사용)</h3>
-        <p>HTML 파일을 그냥 열면 브라우저 정책상 폴더 안의 JSON 파일을 자동으로 읽고 쓸 수 없어요. 대신 프로젝트 폴더의 <code>server.js</code>를 실행하면 같은 폴더의 <code>data.json</code>을 자동으로 불러오고, 기록을 추가·수정할 때마다 자동으로 그 파일에 저장돼요.</p>
-        <ol>
-          <li>터미널(PowerShell)을 열고 프로젝트 폴더로 이동: <code>cd C:\Users\user\Desktop\project</code></li>
-          <li><code>node server.js</code> 실행</li>
-          <li>브라우저에서 <code>http://localhost:5173</code> 접속 (HTML 파일을 직접 더블클릭하지 말고 이 주소로 열어야 해요)</li>
-        </ol>
-        <p>서버를 끄지 않는 한 계속 그 폴더의 data.json에 저장되고, 다음에 다시 켜도 이어서 사용할 수 있어요.</p>
-      </div>
-      <div class="m-item">
-        <h3>데이터 내보내기 / 가져오기</h3>
-        <p>계정(클라우드)에 저장된 데이터와 로컬 파일로 연 화면의 데이터는 서로 다른 저장소예요. 내보내기로 백업(JSON)을 받아서, 다른 화면(로컬 파일 등)에서 가져오기로 불러올 수 있어요. 가져오기는 기존 데이터를 지우지 않고 추가돼요.</p>
+        <h3>데이터 백업하기</h3>
+        <p>혹시 몰라 기록을 파일로 남겨두고 싶다면 내보내기를 눌러 백업 파일을 받아두세요. 나중에 가져오기로 다시 불러올 수 있고, 가져오기를 해도 기존 기록은 지워지지 않고 그대로 더해져요.</p>
         <div class="formactions" style="justify-content:flex-start">
-          <button class="ghost-btn" type="button" id="btnExportData">데이터 내보내기 (JSON)</button>
-          <button class="ghost-btn" type="button" id="btnImportTrigger">데이터 가져오기 (JSON)</button>
+          <button class="ghost-btn" type="button" id="btnExportData">데이터 내보내기</button>
+          <button class="ghost-btn" type="button" id="btnImportTrigger">데이터 가져오기</button>
           <input type="file" id="importFileInput" accept="application/json,.json" hidden>
         </div>
         <div class="ai-box" id="importStatus" hidden></div>
       </div>
       <div class="m-item">
-        <h3>Google 로그인 (내 계정으로 어디서든 접속)</h3>
-        <p>Google로 로그인하면 이 계정 전용 데이터가 Supabase에 저장돼서, 로컬 서버 없이도 어느 기기·브라우저에서든 로그인만 하면 같은 기록을 볼 수 있어요. 로그인하지 않으면 기존처럼 로컬 파일/브라우저 저장소를 사용해요.</p>
-        <ol>
-          <li>Google Cloud Console에서 OAuth 클라이언트 ID 생성 (승인된 리디렉션 URI에 <code>https://프로젝트ref.supabase.co/auth/v1/callback</code> 추가)</li>
-          <li>Supabase 대시보드 → Authentication → Providers → Google 활성화, 위 클라이언트 ID/Secret 입력</li>
-          <li>Supabase 대시보드 → Authentication → URL Configuration → Redirect URLs에 <code>http://localhost:5173</code> 추가</li>
-          <li><code>supabase/schema_users.sql</code>을 SQL Editor에서 실행 (로그인 사용자별 테이블 생성)</li>
-          <li><code>bongtu-ledger.html</code> 안의 <code>SUPABASE_ANON_KEY</code> 값을 Supabase 대시보드 Settings → API의 anon(public) 키로 교체</li>
-        </ol>
-        <p>설정 전에는 화면 오른쪽 위에 로그인 버튼이 아예 보이지 않아요.</p>
+        <h3>구글 계정으로 로그인하기</h3>
+        <p>화면 오른쪽 위 로그인 버튼으로 구글 계정에 로그인하면, 그 계정으로 어디서든 접속해서 같은 기록을 이어볼 수 있어요.</p>
       </div>
     </div>
   </section>
@@ -1514,6 +1505,13 @@
     }).sort(function(a,b){ return Math.abs(b.net)-Math.abs(a.net); });
   }
 
+  function personLastDate(name){
+    var dates = entries.filter(function(e){ return e.person===name; }).map(function(e){ return e.date; })
+      .concat(gifts.filter(function(g){ return g.person===name; }).map(function(g){ return g.date; }))
+      .filter(Boolean);
+    return dates.length ? dates.sort().slice(-1)[0] : '';
+  }
+
   function reactionsFor(personName){
     var list = [];
     entries.forEach(function(e){ if(e.person===personName && e.reaction){ list.push(Number(e.reaction)); } });
@@ -1582,7 +1580,11 @@
     totalNetEl.textContent = (totalNet>=0?'+':'') + won(totalNet);
     totalNetEl.style.color = totalNet>=0 ? 'var(--blue)' : 'var(--red-ink)';
 
-    var balances = combinedBalances().slice(0,8);
+    var balances = combinedBalances();
+    if(currentBalanceSort==='recv') balances = balances.slice().sort(function(a,b){ return b.net-a.net; });
+    else if(currentBalanceSort==='gave') balances = balances.slice().sort(function(a,b){ return a.net-b.net; });
+    else if(currentBalanceSort==='recent') balances = balances.slice().sort(function(a,b){ return personLastDate(b.name).localeCompare(personLastDate(a.name)); });
+    balances = balances.slice(0,8);
     var bl = document.getElementById('balanceList');
     if(balances.length===0){
       bl.innerHTML = '<div class="empty">아직 데이터가 없어요.</div>';
@@ -1595,7 +1597,9 @@
       }).join('');
     }
 
-    var recent = entries.slice(0,6);
+    var recent = entries.slice().sort(function(a,b){
+      return (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0);
+    }).slice(0,6);
     var tb = document.querySelector('#recentTable tbody');
     tb.innerHTML = recent.map(function(e){
       return '<tr><td>'+e.date+'</td><td>'+escapeHtml(e.person)+'</td><td>'+e.eventType+'</td><td><span class="pill '+(e.direction==='gave'?'gave':'recv')+'">'+(e.direction==='gave'?'냄':'받음')+'</span></td><td class="amt">'+won(e.amount)+'</td></tr>';
@@ -1768,6 +1772,9 @@
     var list = gifts.filter(function(g){
       return (currentGiftFilter==='all' || g.direction===currentGiftFilter) && (!currentGiftPersonFilter || g.person===currentGiftPersonFilter);
     });
+    if(currentGiftSort==='price_desc') list = list.slice().sort(function(a,b){ return giftValue(b)-giftValue(a); });
+    else if(currentGiftSort==='price_asc') list = list.slice().sort(function(a,b){ return giftValue(a)-giftValue(b); });
+    else list = list.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
     var tb = document.querySelector('#giftTable tbody');
     document.getElementById('giftEmpty').hidden = gifts.length>0;
     tb.innerHTML = list.map(function(g){
@@ -1814,6 +1821,15 @@
     renderGift();
     renderProfiles();
   }
+
+  var currentBalanceSort = 'diff';
+  document.getElementById('balanceSortChips').addEventListener('click', function(ev){
+    var btn = ev.target.closest('button[data-sort]');
+    if(!btn) return;
+    currentBalanceSort = btn.dataset.sort;
+    this.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    renderDash();
+  });
 
   document.getElementById('filterChips').addEventListener('click', function(ev){
     var btn = ev.target.closest('button[data-filter]');
@@ -1950,6 +1966,11 @@
   });
   document.getElementById('giftPersonFilter').addEventListener('change', function(){
     currentGiftPersonFilter = this.value;
+    renderGift();
+  });
+  var currentGiftSort = 'date';
+  document.getElementById('giftSort').addEventListener('change', function(){
+    currentGiftSort = this.value;
     renderGift();
   });
 
@@ -2363,10 +2384,17 @@
     var past = parseAmountInput(c_past.value);
     var adjustedBase = base * mult;
     var suggested;
+    var formula;
     if(past > 0){
       suggested = adjustedBase*0.4 + past*0.6;
+      formula = '① 기준 시세 '+won(base)+' × 친밀도 배수 '+mult.toFixed(1)+' = 보정 기준액 '+won(adjustedBase)+'<br>'
+        + '② 과거에 받은 금액이 있어서, 보정 기준액의 40%('+won(Math.round(adjustedBase*0.4))+') + 과거 받은 금액의 60%('+won(Math.round(past*0.6))+')를 더해요<br>'
+        + '③ 그 값을 1만원 단위로 반올림해요 (최소 1만원 보장)';
     } else {
       suggested = adjustedBase;
+      formula = '① 기준 시세 '+won(base)+' × 친밀도 배수 '+mult.toFixed(1)+' = 보정 기준액 '+won(adjustedBase)+'<br>'
+        + '② 이 사람에게 과거에 받은 기록이 없어서, 보정 기준액을 그대로 사용해요<br>'
+        + '③ 그 값을 1만원 단위로 반올림해요 (최소 1만원 보장)';
     }
     suggested = Math.max(10000, roundTo(suggested, suggested>=100000?10000:5000));
 
@@ -2374,6 +2402,7 @@
     document.getElementById('calcBase').textContent = won(base);
     document.getElementById('calcCloseness').textContent = '×' + mult.toFixed(1);
     document.getElementById('calcPast').textContent = past>0 ? won(past) : '기록 없음';
+    document.getElementById('calcFormula').innerHTML = formula;
   }
 
   c_closeness.addEventListener('change', runCalc);
