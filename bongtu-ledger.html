@@ -731,7 +731,9 @@
         <h3>사람</h3>
         <ul>
           <li>이름·나이·직장·성향·최근 이슈·기념일을 등록해두면 프로필 카드가 생겨요</li>
-          <li>카드마다 <strong>통합 정산 금액</strong>, 반응 기록을 바탕으로 한 <strong>화이트/블랙리스트 등급</strong>, 주고받은 이력 타임라인을 볼 수 있어요</li>
+          <li><strong>화이트/블랙리스트</strong>는 통합 정산 금액 기준이에요 — 내가 받은 게 3만원 이상 많으면 화이트, 내가 챙겨준 게 3만원 이상 많으면 블랙, 그 사이면 보통</li>
+          <li><strong>내 반응</strong>(좋음/보통/별로)은 라벨링과 별개로 기록에 남긴 평가의 평균으로 따로 표시돼요</li>
+          <li>주고받은 이력 타임라인도 확인할 수 있어요</li>
         </ul>
       </div>
       <div class="m-item">
@@ -1244,13 +1246,22 @@
     return list;
   }
 
+  var GRADE_THRESHOLD = 30000; // 통합 정산 금액이 이 값 이상 차이나면 화이트/블랙으로 분류
+
   function relationshipGrade(personName){
+    var bal = combinedBalances().find(function(b){ return b.name===personName; });
+    if(!bal || bal.count===0) return {grade:'none', label:'데이터 없음', net:0};
+    if(bal.net >= GRADE_THRESHOLD) return {grade:'white', label:'화이트리스트', net:bal.net};
+    if(bal.net <= -GRADE_THRESHOLD) return {grade:'black', label:'블랙리스트', net:bal.net};
+    return {grade:'neutral', label:'보통', net:bal.net};
+  }
+
+  function reactionSummaryLabel(personName){
     var list = reactionsFor(personName);
-    if(list.length===0) return {grade:'none', label:'미평가', avg:null};
+    if(list.length===0) return null;
     var avg = list.reduce(function(a,b){ return a+b; },0) / list.length;
-    if(avg>=2.5) return {grade:'white', label:'화이트리스트', avg:avg};
-    if(avg<=1.5) return {grade:'black', label:'블랙리스트', avg:avg};
-    return {grade:'neutral', label:'보통', avg:avg};
+    var word = avg>=2.5 ? '좋음' : (avg<=1.5 ? '별로' : '보통');
+    return '내 반응: '+word+' (평균 '+avg.toFixed(1)+'/3, '+list.length+'건)';
   }
 
   function updatePersonList(){
@@ -1865,13 +1876,14 @@
       if(p.anniversary) meta.push('기념일 <strong>'+escapeHtml(p.anniversary)+'</strong>');
       var expanded = !!expandedProfiles[name];
       var sign = bal.net>0?'+':'';
+      var reactionLabel = reactionSummaryLabel(name);
       return '<div class="profile-card" data-person="'+escapeHtml(name)+'">'+
         '<div class="profile-top">'+
           '<span class="name">'+escapeHtml(name)+'</span>'+
           '<span class="pill '+gradeClass+'">'+grade.label+'</span>'+
         '</div>'+
         (meta.length? '<div class="profile-meta">'+meta.map(function(m){ return '<span>'+m+'</span>'; }).join('')+'</div>' : '')+
-        '<div class="profile-meta"><span class="profile-settlement '+(bal.net>=0?'amt pos':'amt neg')+'">통합 정산 '+sign+won(bal.net)+'</span></div>'+
+        '<div class="profile-meta"><span class="profile-settlement '+(bal.net>=0?'amt pos':'amt neg')+'">통합 정산 '+sign+won(bal.net)+'</span>'+(reactionLabel?('<span>'+escapeHtml(reactionLabel)+'</span>'):'<span class="hint" style="margin:0;">반응 기록 없음</span>')+'</div>'+
         '<div class="profile-actions">'+
           '<button type="button" class="ghost-btn btn-toggle-timeline">'+(expanded?'이력 접기':'이력 보기')+'</button>'+
         '</div>'+
