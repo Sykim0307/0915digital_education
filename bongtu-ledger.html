@@ -311,6 +311,23 @@
   @media (max-width:520px){.parse-result{grid-template-columns:1fr;}}
   .hint{font-size:.78rem; color:var(--ink-faint);}
   .example{background:var(--paper-alt); border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:.78rem; color:var(--ink-soft); white-space:pre-wrap; font-family:ui-monospace,monospace;}
+
+  /* 테스트 모드(로그인 안 함) vs 내 장부(Google 로그인) 시각 구분 */
+  body[data-app-mode="test"]{
+    background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.025) 0px, rgba(0,0,0,.025) 1.5px, transparent 1.5px, transparent 16px);
+  }
+  body[data-app-mode="secured"]{
+    background-image: radial-gradient(ellipse 900px 500px at 50% -60px, rgba(184,54,43,.06), transparent 70%);
+  }
+  .mode-badge{display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:.01em; white-space:nowrap;}
+  .mode-badge.test{background:transparent; color:var(--ink-faint); border:1px dashed var(--line-strong);}
+  .mode-badge.secured{background:var(--red-tint); color:var(--red-ink); border:1px solid var(--red);}
+  @keyframes ledgerUnlock{
+    0%{ opacity:0; transform:translateY(8px) scale(.985); filter:blur(2px); }
+    100%{ opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
+  }
+  .wrap.unlocking{ animation: ledgerUnlock .55s cubic-bezier(.2,.7,.3,1); }
+  @media (prefers-reduced-motion: reduce){ .wrap.unlocking{ animation:none; } }
 </style>
 </head>
 <body>
@@ -319,6 +336,7 @@
     <div class="brand">
       <h1>봉투장부</h1>
       <span class="tag">경조사비, 잊지 않고 오래 가는 관계로</span>
+      <span class="mode-badge" id="modeBadge" hidden></span>
     </div>
     <div class="headerRight">
       <div class="authbox" id="authBox" hidden></div>
@@ -523,6 +541,9 @@
         <button class="ghost-btn active" data-gfilter="all">전체</button>
         <button class="ghost-btn" data-gfilter="gave">보낸 것</button>
         <button class="ghost-btn" data-gfilter="received">받은 것</button>
+        <select id="giftPersonFilter" style="width:auto; display:inline-block; padding:6px 12px; border-radius:20px;">
+          <option value="">전체 사람</option>
+        </select>
       </div>
       <div class="chiprow">
         <button class="ghost-btn" id="btnGiftParseToggle" type="button">카톡 텍스트로 추가</button>
@@ -537,8 +558,7 @@
 스타벅스 아메리카노 Tall 기프티콘을 보냈습니다.</div>
       <textarea id="giftParseInput" placeholder="여기에 카톡 대화 내용을 붙여넣으세요"></textarea>
       <div class="formactions" style="justify-content:flex-start">
-        <button class="ghost-btn" type="button" id="btnGiftParse">빠른 분석 (규칙 기반)</button>
-        <button class="stamp-btn" type="button" id="btnGiftParseAI">AI로 분석하기</button>
+        <button class="stamp-btn" type="button" id="btnGiftParse">분석하기</button>
       </div>
       <p class="hint">사진(캡처)으로도 분석할 수 있어요 — 카톡 선물 화면이나 영수증 사진을 올리면 AI가 쿠폰명·가격대·보낸 사람을 읽어드려요.</p>
       <div class="photo-row">
@@ -671,10 +691,8 @@
 09/15 14:23 잔액 320,500원</div>
     <textarea id="parseInput" placeholder="여기에 문자 내용을 붙여넣으세요"></textarea>
     <div class="formactions" style="justify-content:flex-start">
-      <button class="ghost-btn" type="button" id="btnParse">빠른 분석 (규칙 기반)</button>
-      <button class="stamp-btn" type="button" id="btnParseAI">AI로 분석하기</button>
+      <button class="stamp-btn" type="button" id="btnParse">분석하기</button>
     </div>
-    <div class="ai-box" id="bankAiStatus" hidden></div>
     <div class="parse-result" id="parseResult">
       <label>추정 이름
         <input type="text" id="p_person">
@@ -723,9 +741,10 @@
       <div class="m-item">
         <h3>기프티콘</h3>
         <ul>
-          <li>"＋ 새 선물 기록"으로 직접 입력하거나, "카톡 텍스트로 추가"에서 대화를 붙여넣어 <strong>빠른 분석(규칙 기반)</strong> 또는 <strong>AI로 분석하기</strong>를 눌러 자동 채우기</li>
-          <li>카톡 캡처나 영수증 사진이 있으면 "사진 분석하기"로 AI가 쿠폰명·가격대를 읽어드려요</li>
+          <li>"＋ 새 선물 기록"으로 직접 입력하거나, "카톡 텍스트로 추가"에서 대화를 붙여넣어 <strong>분석하기</strong>(규칙 기반)로 자동 채우기</li>
+          <li>카톡 캡처나 영수증 사진이 있으면 "사진 분석하기"로 AI가 쿠폰명·가격대를 읽어드려요 (claude.ai에서 열었을 때만 동작)</li>
           <li>받은 선물은 표에서 "사용" 체크박스로 사용 여부를 표시하고, 유효기간이 14일 이내로 다가오면 상단에 경고가 떠요</li>
+          <li>목록 위 필터로 <strong>사람</strong>·<strong>보낸 것/받은 것</strong> 기준으로 골라볼 수 있어요</li>
         </ul>
       </div>
       <div class="m-item">
@@ -739,7 +758,7 @@
       </div>
       <div class="m-item">
         <h3>입출금 문자</h3>
-        <p>은행 알림 문자를 붙여넣고 빠른 분석 또는 AI 분석으로 금액·이름·입출금 여부를 자동 인식해 경조사비 기록에 추가해요.</p>
+        <p>은행 알림 문자를 붙여넣고 분석하기를 누르면 금액·이름·입출금 여부를 자동 인식해 경조사비 기록에 추가해요.</p>
       </div>
       <div class="m-item">
         <h3>데이터는 어디에 저장되나요?</h3>
@@ -971,6 +990,31 @@
     else if(mode==='gauth'){ el.classList.add('gauth'); txt.textContent='Google 계정에 저장됨'; }
     else if(mode==='server'){ el.classList.add('server'); txt.textContent='이 폴더의 data.json에 저장됨'; }
     else { el.classList.add('local'); txt.textContent='이 브라우저에만 저장됨'; }
+    applyAppModeUI(mode);
+  }
+
+  function applyAppModeUI(mode){
+    var appMode = (mode==='gauth') ? 'secured' : (mode==='live') ? 'cloud' : 'test';
+    var wasSecured = document.body.getAttribute('data-app-mode') === 'secured';
+    document.body.setAttribute('data-app-mode', appMode);
+    var badge = document.getElementById('modeBadge');
+    if(appMode==='secured'){
+      badge.hidden = false;
+      badge.className = 'mode-badge secured';
+      badge.textContent = '🔒 내 장부 (보안 저장)';
+      if(!wasSecured){
+        var wrap = document.querySelector('.wrap');
+        wrap.classList.remove('unlocking');
+        void wrap.offsetWidth;
+        wrap.classList.add('unlocking');
+      }
+    } else if(appMode==='test'){
+      badge.hidden = false;
+      badge.className = 'mode-badge test';
+      badge.textContent = '🧪 테스트 모드';
+    } else {
+      badge.hidden = true;
+    }
   }
 
   var serverSaveTimer = null;
@@ -1472,7 +1516,10 @@
       }).join('');
     }
 
-    var list = gifts.filter(function(g){ return currentGiftFilter==='all' || g.direction===currentGiftFilter; });
+    updateGiftPersonFilterOptions();
+    var list = gifts.filter(function(g){
+      return (currentGiftFilter==='all' || g.direction===currentGiftFilter) && (!currentGiftPersonFilter || g.person===currentGiftPersonFilter);
+    });
     var tb = document.querySelector('#giftTable tbody');
     document.getElementById('giftEmpty').hidden = gifts.length>0;
     tb.innerHTML = list.map(function(g){
@@ -1490,6 +1537,9 @@
         '<td><button class="del-btn" data-gid="'+g.id+'">삭제</button></td>'+
         '</tr>';
     }).join('');
+    if(list.length===0 && gifts.length>0){
+      tb.innerHTML = '<tr><td colspan="8" class="empty">조건에 맞는 선물 기록이 없어요.</td></tr>';
+    }
     tb.querySelectorAll('.g-used-toggle').forEach(function(cb){
       cb.addEventListener('change', function(){ toggleGiftUsed(cb.dataset.id, cb.checked); });
     });
@@ -1633,6 +1683,7 @@
 
   // ---------- gift records ----------
   var currentGiftFilter = 'all';
+  var currentGiftPersonFilter = '';
   document.getElementById('giftFilterChips').addEventListener('click', function(ev){
     var btn = ev.target.closest('button[data-gfilter]');
     if(!btn) return;
@@ -1640,6 +1691,20 @@
     this.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b===btn); });
     renderGift();
   });
+  document.getElementById('giftPersonFilter').addEventListener('change', function(){
+    currentGiftPersonFilter = this.value;
+    renderGift();
+  });
+
+  function updateGiftPersonFilterOptions(){
+    var sel = document.getElementById('giftPersonFilter');
+    var current = sel.value;
+    var names = Array.from(new Set(gifts.map(function(g){ return g.person; }))).filter(Boolean).sort();
+    sel.innerHTML = '<option value="">전체 사람</option>' + names.map(function(n){
+      return '<option value="'+escapeHtml(n)+'"'+(n===current?' selected':'')+'>'+escapeHtml(n)+'</option>';
+    }).join('');
+    sel.value = names.indexOf(current)>-1 ? current : '';
+  }
 
   var giftForm = document.getElementById('giftForm');
   document.getElementById('btnNewGift').addEventListener('click', function(){
@@ -1762,30 +1827,6 @@
     el.hidden = false;
     el.textContent = AI_ERROR_COPY[e.code] || ('오류가 발생했어요 ('+e.code+'). 잠시 후 다시 시도해주세요.');
   }
-
-  document.getElementById('btnGiftParseAI').addEventListener('click', async function(){
-    var status = document.getElementById('giftAiStatus');
-    var text = document.getElementById('giftParseInput').value.trim();
-    if(!text){ return; }
-    if(!sample){ status.hidden=false; status.textContent='AI 기능을 사용할 수 없는 환경이에요. claude.ai에서 이 아티팩트를 열어야 사용할 수 있어요.'; return; }
-    status.hidden = false; status.textContent = 'AI가 대화 내용을 분석하고 있어요…';
-    this.disabled = true;
-    try{
-      var data = await sample.json(
-        '다음은 카카오톡 대화 내용이야. 선물(기프티콘)을 주고받은 상황이면 아래 JSON 형식으로만 답해:\n'+
-        '{"person": 상대방 이름(모르면 null), "giftName": 쿠폰/선물 이름, "tier": "실속형"|"중가"|"고가" 중 하나, "direction": "gave"|"received"}\n\n'+
-        '대화 내용:\n'+text,
-        {modelTier:'quick', cache:false}
-      );
-      document.getElementById('gp_person').value = data.person || '';
-      document.getElementById('gp_name').value = data.giftName || '';
-      if(data.tier) document.getElementById('gp_tier').value = data.tier;
-      if(data.direction){ document.querySelector('input[name="gp_dir"][value="'+data.direction+'"]').checked = true; }
-      document.getElementById('giftParseResult').classList.add('show');
-      status.hidden = true;
-    }catch(e){ showAiError(status, e); }
-    this.disabled = false;
-  });
 
   document.getElementById('btnGiftPhotoAnalyze').addEventListener('click', async function(){
     var status = document.getElementById('giftAiStatus');
@@ -2032,30 +2073,6 @@
     document.getElementById('parseResult').classList.add('show');
   });
   document.getElementById('p_amount').addEventListener('input', function(){ formatAmountField(this); });
-
-  document.getElementById('btnParseAI').addEventListener('click', async function(){
-    var status = document.getElementById('bankAiStatus');
-    var text = document.getElementById('parseInput').value.trim();
-    if(!text){ return; }
-    if(!sample){ status.hidden=false; status.textContent='AI 기능을 사용할 수 없는 환경이에요. claude.ai에서 이 아티팩트를 열어야 사용할 수 있어요.'; return; }
-    status.hidden = false; status.textContent = 'AI가 문자 내용을 분석하고 있어요…';
-    this.disabled = true;
-    try{
-      var data = await sample.json(
-        '다음은 은행 입출금 알림 문자야. 아래 JSON 형식으로만 답해:\n'+
-        '{"person": 상대방 이름(모르면 null), "amount": 숫자(원 단위, 모르면 null), "direction": "gave"|"received"}\n\n'+
-        '문자 내용:\n'+text,
-        {modelTier:'quick', cache:false}
-      );
-      document.getElementById('p_person').value = data.person || '';
-      document.getElementById('p_amount').value = data.amount ? Number(data.amount).toLocaleString('ko-KR') : '';
-      document.getElementById('p_date').value = todayStr();
-      if(data.direction){ document.querySelector('input[name="p_dir"][value="'+data.direction+'"]').checked = true; }
-      document.getElementById('parseResult').classList.add('show');
-      status.hidden = true;
-    }catch(e){ showAiError(status, e); }
-    this.disabled = false;
-  });
 
   document.getElementById('btnUseParsed').addEventListener('click', function(){
     var dir = document.querySelector('input[name="p_dir"]:checked').value;
