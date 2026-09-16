@@ -263,9 +263,6 @@
   .timeline-row .tamt{flex:none; font-variant-numeric:tabular-nums; font-weight:600;}
 
   .ai-box{background:var(--paper-alt); border:1px dashed var(--line-strong); border-radius:10px; padding:12px 14px; margin-top:10px; font-size:.88rem; white-space:pre-wrap;}
-  .ai-feedback{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:.8rem; color:var(--ink-soft);}
-  .ai-feedback button{background:none; border:1px solid var(--line-strong); border-radius:20px; padding:4px 11px; cursor:pointer; font-size:.8rem;}
-  .ai-feedback button.picked{background:var(--ink); color:var(--paper); border-color:var(--ink);}
   .photo-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
   .photo-row input[type=file]{flex:1; min-width:180px;}
 
@@ -634,7 +631,7 @@
   <!-- PEOPLE -->
   <section class="panel" id="tab-people" hidden>
     <h2 class="section-title">사람별 프로필</h2>
-    <p class="hint">나이·성향·직장·최근 이슈를 기록해두면 AI 선물 추천과 화이트/블랙리스트 분류에 활용돼요.</p>
+    <p class="hint">나이·성향·직장·최근 이슈를 기록해두면 화이트/블랙리스트 분류에 활용돼요.</p>
     <form class="card" id="personForm">
       <label class="full">이름
         <input type="text" id="pp_name" list="personList" required placeholder="예: 오정화">
@@ -735,7 +732,6 @@
         <ul>
           <li>이름·나이·직장·성향·최근 이슈·기념일을 등록해두면 프로필 카드가 생겨요</li>
           <li>카드마다 <strong>통합 정산 금액</strong>, 반응 기록을 바탕으로 한 <strong>화이트/블랙리스트 등급</strong>, 주고받은 이력 타임라인을 볼 수 있어요</li>
-          <li>"AI 선물 추천 받기"를 누르면 프로필과 예산을 바탕으로 선물 아이디어를 제안받고, 도움이 됐는지 👍/👎로 평가할 수 있어요 (실시간 쇼핑몰 검색은 지원하지 않고, AI가 제안하는 아이디어예요)</li>
         </ul>
       </div>
       <div class="m-item">
@@ -1851,13 +1847,6 @@
         .concat(gifts.map(function(g){ return g.person; }))
     )).filter(Boolean).sort();
 
-    var recStats = {};
-    recommendations.forEach(function(r){
-      if(!recStats[r.person]) recStats[r.person] = {up:0, total:0};
-      recStats[r.person].total++;
-      if(r.helpful) recStats[r.person].up++;
-    });
-
     var list = document.getElementById('profileList');
     if(names.length===0){
       list.innerHTML = '<div class="empty">아직 등록된 사람이 없어요. 위 폼으로 첫 프로필을 만들어보세요.</div>';
@@ -1874,8 +1863,6 @@
       if(p.personality) meta.push('성향 <strong>'+escapeHtml(p.personality)+'</strong>');
       if(p.recentIssue) meta.push('최근 이슈 <strong>'+escapeHtml(p.recentIssue)+'</strong>');
       if(p.anniversary) meta.push('기념일 <strong>'+escapeHtml(p.anniversary)+'</strong>');
-      var rs = recStats[name];
-      var recLine = rs ? ('AI 추천 만족도 '+Math.round(rs.up/rs.total*100)+'% ('+rs.total+'건 평가)') : '';
       var expanded = !!expandedProfiles[name];
       var sign = bal.net>0?'+':'';
       return '<div class="profile-card" data-person="'+escapeHtml(name)+'">'+
@@ -1884,16 +1871,11 @@
           '<span class="pill '+gradeClass+'">'+grade.label+'</span>'+
         '</div>'+
         (meta.length? '<div class="profile-meta">'+meta.map(function(m){ return '<span>'+m+'</span>'; }).join('')+'</div>' : '')+
-        '<div class="profile-meta"><span class="profile-settlement '+(bal.net>=0?'amt pos':'amt neg')+'">통합 정산 '+sign+won(bal.net)+'</span>'+(recLine?('<span>'+recLine+'</span>'):'')+'</div>'+
+        '<div class="profile-meta"><span class="profile-settlement '+(bal.net>=0?'amt pos':'amt neg')+'">통합 정산 '+sign+won(bal.net)+'</span></div>'+
         '<div class="profile-actions">'+
           '<button type="button" class="ghost-btn btn-toggle-timeline">'+(expanded?'이력 접기':'이력 보기')+'</button>'+
-          '<select class="rec-tier-select" style="width:auto; display:inline-block; padding:6px 10px;">'+
-            '<option value="실속형">실속형 예산</option><option value="중가" selected>중가 예산</option><option value="고가">고가 예산</option>'+
-          '</select>'+
-          '<button type="button" class="stamp-btn btn-ai-recommend" style="font-size:.8rem; padding:7px 14px;">AI 선물 추천 받기</button>'+
         '</div>'+
         (expanded? '<div class="timeline">'+personTimelineHtml(name)+'</div>' : '')+
-        '<div class="ai-box ai-rec-box" hidden></div>'+
       '</div>';
     }).join('');
 
@@ -1904,62 +1886,6 @@
         renderProfiles();
       });
     });
-    list.querySelectorAll('.btn-ai-recommend').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var card = btn.closest('.profile-card');
-        var name = card.dataset.person;
-        var tier = card.querySelector('.rec-tier-select').value;
-        requestGiftRecommendation(name, tier, card.querySelector('.ai-rec-box'), btn);
-      });
-    });
-  }
-
-  async function requestGiftRecommendation(name, tier, box, btn){
-    box.hidden = false;
-    box.innerHTML = 'AI에게 추천을 요청하고 있어요… (몇 초에서 최대 1분 정도 걸릴 수 있어요)';
-    btn.disabled = true;
-    if(!sample){
-      box.innerHTML = 'AI 기능을 사용할 수 없는 환경이에요. claude.ai에서 이 아티팩트를 열어야 사용할 수 있어요.';
-      btn.disabled = false;
-      return;
-    }
-    var p = people.find(function(x){ return x.name===name; }) || {};
-    var history = gifts.filter(function(g){ return g.person===name; }).slice(0,5)
-      .map(function(g){ return g.date+' '+(g.direction==='gave'?'보냄':'받음')+' '+g.name+'('+g.tier+')'; }).join('\n') || '없음';
-    var prompt = '아래 사람에게 줄 선물을 추천해줘. 예산대는 "'+tier+'"이야 (실속형: 1만원대, 중가: 2~4만원대, 고가: 5만원 이상).\n'+
-      '이름: '+name+'\n'+
-      '나이: '+(p.age||'모름')+'\n'+
-      '직장: '+(p.workplace||'모름')+'\n'+
-      '성향: '+(p.personality||'모름')+'\n'+
-      '최근 이슈: '+(p.recentIssue||'없음')+'\n'+
-      '최근 선물 이력:\n'+history+'\n\n'+
-      '한국어로 2~3개의 구체적인 선물 아이디어를 각각 한 줄 이유와 함께, 짧고 실용적으로 제안해줘. 상품 이름은 일반적인 카테고리(예: "무선 이어폰", "핸드크림 세트")로 말해줘. 서론/결론 없이 목록만 답해.';
-    try{
-      var result = await sample(prompt, {modelTier:'default', cache:false});
-      box.innerHTML = escapeHtml(result.text).replace(/\n/g,'<br>') +
-        '<div class="ai-feedback">이 추천이 도움이 되었나요? '+
-        '<button type="button" class="fb-btn" data-v="1">👍 도움됨</button>'+
-        '<button type="button" class="fb-btn" data-v="0">👎 별로예요</button>'+
-        '</div>';
-      var adviceText = result.text;
-      box.querySelectorAll('.fb-btn').forEach(function(fb){
-        fb.addEventListener('click', function(){
-          box.querySelectorAll('.fb-btn').forEach(function(x){ x.classList.remove('picked'); });
-          fb.classList.add('picked');
-          addRecommendationFeedback(name, tier, fb.dataset.v==='1', adviceText);
-        });
-      });
-    }catch(e){
-      var msgMap = {
-        not_granted: 'AI 기능 사용을 허용하지 않으셨어요.',
-        sampling_disabled: '이 계정에서는 AI 기능을 사용할 수 없어요.',
-        rate_limited: '요청이 많아 잠시 후 다시 시도해주세요.',
-        refused: 'AI가 이 요청을 처리하지 못했어요.',
-        empty_completion: 'AI가 답변을 만들지 못했어요. 다시 시도해주세요.'
-      };
-      box.innerHTML = msgMap[e.code] || ('오류가 발생했어요 ('+e.code+'). 잠시 후 다시 시도해주세요.');
-    }
-    btn.disabled = false;
   }
 
   // ---------- calculator ----------
