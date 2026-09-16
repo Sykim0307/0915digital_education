@@ -1154,7 +1154,11 @@
     sbClient.auth.onAuthStateChange(function(_event, session){ handleAuthChange(session); });
   }
 
-  function won(n){ n = Number(n); if(!isFinite(n)) n = 0; return '₩' + Math.round(n).toLocaleString('ko-KR'); }
+  function won(n){
+    n = Number(n); if(!isFinite(n)) n = 0;
+    var neg = n < 0;
+    return (neg?'-':'') + '₩' + Math.round(Math.abs(n)).toLocaleString('ko-KR');
+  }
   function roundTo(n, step){ return Math.round(n/step)*step; }
   function todayStr(){ return new Date().toISOString().slice(0,10); }
   function parseAmountInput(v){ var d=(v||'').toString().replace(/[^0-9]/g,''); return d? parseInt(d,10):0; }
@@ -1331,6 +1335,15 @@
     updateAuthUI();
   }
 
+  // Supabase 응답에 error가 있으면 화면에 알리고 true를 반환 (호출부에서 이후 로컬 상태 반영을 막는 용도)
+  function checkSbError(res, label){
+    if(res && res.error){
+      alert((label||'저장')+'에 실패했어요: '+res.error.message);
+      return true;
+    }
+    return false;
+  }
+
   async function addEntry(data){
     data.createdAt = Date.now();
     if(db && !usingLocal){
@@ -1339,7 +1352,8 @@
       var row = entryToRow(data);
       row.user_id = currentUser.id;
       var res = await sbClient.from('entries').insert(row).select().single();
-      if(!res.error && res.data){ entries.unshift(rowToEntry(res.data)); renderAll(); }
+      if(checkSbError(res, '기록 저장')) return;
+      if(res.data){ entries.unshift(rowToEntry(res.data)); renderAll(); }
     } else {
       data.id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
       entries.unshift(data);
@@ -1352,7 +1366,8 @@
     if(db && !usingLocal){
       await db.doc('entries/'+id).update(data);
     } else if(storageMode==='supabaseAuth'){
-      await sbClient.from('entries').update(entryToRow(data)).eq('id', id);
+      var res = await sbClient.from('entries').update(entryToRow(data)).eq('id', id);
+      if(checkSbError(res, '기록 수정')) return;
       var idxS = entries.findIndex(function(e){ return e.id===id; });
       if(idxS>-1){ Object.assign(entries[idxS], data); renderAll(); }
     } else {
@@ -1364,7 +1379,8 @@
     if(db && !usingLocal){
       await db.doc('entries/'+id).delete();
     } else if(storageMode==='supabaseAuth'){
-      await sbClient.from('entries').delete().eq('id', id);
+      var res = await sbClient.from('entries').delete().eq('id', id);
+      if(checkSbError(res, '기록 삭제')) return;
       entries = entries.filter(function(e){ return e.id!==id; });
       renderAll();
     } else {
@@ -1383,7 +1399,8 @@
       var row = giftToRow(data);
       row.user_id = currentUser.id;
       var res = await sbClient.from('gifts').insert(row).select().single();
-      if(!res.error && res.data){ gifts.unshift(rowToGift(res.data)); renderAll(); }
+      if(checkSbError(res, '선물 저장')) return;
+      if(res.data){ gifts.unshift(rowToGift(res.data)); renderAll(); }
     } else {
       data.id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
       gifts.unshift(data);
@@ -1396,7 +1413,8 @@
     if(db && !usingLocal){
       await db.doc('gifts/'+id).delete();
     } else if(storageMode==='supabaseAuth'){
-      await sbClient.from('gifts').delete().eq('id', id);
+      var res = await sbClient.from('gifts').delete().eq('id', id);
+      if(checkSbError(res, '선물 삭제')) return;
       gifts = gifts.filter(function(g){ return g.id!==id; });
       renderAll();
     } else {
@@ -1410,7 +1428,8 @@
     if(db && !usingLocal){
       await db.doc('gifts/'+id).update({used:used});
     } else if(storageMode==='supabaseAuth'){
-      await sbClient.from('gifts').update({used:used}).eq('id', id);
+      var res = await sbClient.from('gifts').update({used:used}).eq('id', id);
+      if(checkSbError(res, '선물 상태 저장')) return;
       var gS = gifts.find(function(g){ return g.id===id; });
       if(gS){ gS.used = used; renderAll(); }
     } else {
@@ -1427,14 +1446,16 @@
     } else if(storageMode==='supabaseAuth'){
       var row = personFieldsToRow(fields);
       if(existing){
-        await sbClient.from('people').update(row).eq('id', existing.id);
+        var res = await sbClient.from('people').update(row).eq('id', existing.id);
+        if(checkSbError(res, '프로필 저장')) return false;
         Object.assign(existing, fields);
         renderAll();
       } else {
         row.user_id = currentUser.id;
         row.name = name;
-        var res = await sbClient.from('people').insert(row).select().single();
-        if(!res.error && res.data){ people.push(rowToPerson(res.data)); renderAll(); }
+        var res2 = await sbClient.from('people').insert(row).select().single();
+        if(checkSbError(res2, '프로필 저장')) return false;
+        if(res2.data){ people.push(rowToPerson(res2.data)); renderAll(); }
       }
     } else {
       if(existing){ Object.assign(existing, fields); }
@@ -1443,6 +1464,7 @@
       persistNow();
       renderAll();
     }
+    return true;
   }
 
   async function addRecommendationFeedback(person, tier, helpful, advice){
@@ -2273,7 +2295,7 @@
     document.getElementById('personForm').hidden = true;
   });
 
-  document.getElementById('personForm').addEventListener('submit', function(ev){
+  document.getElementById('personForm').addEventListener('submit', async function(ev){
     ev.preventDefault();
     var name = editingPersonName || document.getElementById('pp_name').value.trim();
     if(!name) return;
@@ -2304,7 +2326,8 @@
     });
     // 성향 태그는 빈 배열도 유효한 선택이라 위 로직과 분리해서 그대로 저장
     fields.personalityTags = getSelectedTags();
-    upsertPerson(name, fields);
+    var ok = await upsertPerson(name, fields);
+    if(!ok) return;
     resetPersonForm();
     document.getElementById('personForm').hidden = true;
   });
