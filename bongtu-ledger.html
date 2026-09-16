@@ -261,6 +261,7 @@
 
   .profile-list{display:flex; flex-direction:column; gap:10px;}
   .profile-card{background:var(--paper-raised); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow);}
+  .profile-card.editing{border-color:var(--blue); box-shadow:0 0 0 2px var(--blue) inset, var(--shadow);}
   .profile-top{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
   .profile-top .name{font-family:'Noto Serif KR',serif; font-size:1.1rem; font-weight:700; overflow-wrap:anywhere; min-width:0;}
   .profile-meta{display:flex; gap:12px; flex-wrap:wrap; font-size:.8rem; color:var(--ink-soft); margin-top:4px; overflow-wrap:anywhere;}
@@ -2277,7 +2278,8 @@
     document.getElementById('personFormTitle').textContent = name+' 프로필 편집';
     document.getElementById('personForm').hidden = false;
     goTab('people');
-    document.getElementById('personForm').scrollIntoView({behavior:'smooth', block:'start'});
+    renderProfiles();
+    document.getElementById('personForm').scrollIntoView({behavior:'smooth', block:'center'});
     document.getElementById('pp_recentIssue').focus();
   }
 
@@ -2286,6 +2288,7 @@
     if(!form.hidden && !editingPersonName){ form.hidden = true; return; }
     resetPersonForm();
     form.hidden = false;
+    renderProfiles();
     form.scrollIntoView({behavior:'smooth', block:'start'});
     document.getElementById('pp_name').focus();
   });
@@ -2293,6 +2296,7 @@
   document.getElementById('btnCancelPerson').addEventListener('click', function(){
     resetPersonForm();
     document.getElementById('personForm').hidden = true;
+    renderProfiles();
   });
 
   document.getElementById('personForm').addEventListener('submit', async function(ev){
@@ -2330,6 +2334,7 @@
     if(!ok) return;
     resetPersonForm();
     document.getElementById('personForm').hidden = true;
+    renderProfiles();
   });
 
   function personTimelineHtml(name){
@@ -2345,7 +2350,22 @@
     }).join('');
   }
 
+  function placePersonForm(){
+    // personForm은 목록 안(편집 대상 카드 바로 아래) 또는 목록 뒤(새 프로필 추가) 둘 중 한 곳에 놓이는데,
+    // list.innerHTML을 다시 쓰면 그 안에 들어있던 폼이 통째로 사라지므로 항상 재배치가 필요함
+    var form = document.getElementById('personForm');
+    var list = document.getElementById('profileList');
+    if(editingPersonName){
+      var card = Array.from(list.children).find(function(el){ return el.dataset && el.dataset.person===editingPersonName; });
+      if(card){ card.insertAdjacentElement('afterend', form); return; }
+    }
+    list.insertAdjacentElement('afterend', form);
+  }
+
   function renderProfiles(){
+    // innerHTML 교체로 폼이 사라지지 않도록 목록 밖으로 잠깐 꺼내둠
+    document.getElementById('tab-people').appendChild(document.getElementById('personForm'));
+
     var names = Array.from(new Set(
       people.map(function(p){ return p.name; })
         .concat(entries.map(function(e){ return e.person; }))
@@ -2363,6 +2383,7 @@
     var list = document.getElementById('profileList');
     if(names.length===0){
       list.innerHTML = '<div class="empty">아직 등록된 사람이 없어요. "＋ 새 프로필 추가"로 첫 프로필을 만들어보세요.</div>';
+      placePersonForm();
       return;
     }
     list.innerHTML = names.map(function(name){
@@ -2388,7 +2409,7 @@
       var expanded = !!expandedProfiles[name];
       var sign = bal.net>0?'+':'';
       var reactionLabel = reactionSummaryLabel(name);
-      return '<div class="profile-card" data-person="'+escapeHtml(name)+'">'+
+      return '<div class="profile-card'+(editingPersonName===name?' editing':'')+'" data-person="'+escapeHtml(name)+'">'+
         '<div class="profile-top">'+
           '<span class="name">'+escapeHtml(name)+'</span>'+
           '<span class="pill '+gradeClass+'">'+grade.label+'</span>'+
@@ -2416,6 +2437,8 @@
         editPerson(btn.closest('.profile-card').dataset.person);
       });
     });
+
+    placePersonForm();
   }
 
   // ---------- calculator ----------
