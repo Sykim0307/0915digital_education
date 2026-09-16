@@ -630,8 +630,8 @@
 
   <!-- PEOPLE -->
   <section class="panel" id="tab-people" hidden>
-    <h2 class="section-title">사람별 프로필</h2>
-    <p class="hint">나이·성향·직장·최근 이슈를 기록해두면 화이트/블랙리스트 분류에 활용돼요.</p>
+    <h2 class="section-title" id="personFormTitle">사람별 프로필</h2>
+    <p class="hint">나이·성향·직장·최근 이슈를 기록해두면 화이트/블랙리스트 분류에 활용돼요. 프로필 카드의 "편집"을 누르면 여기서 수정할 수 있어요.</p>
     <form class="card" id="personForm">
       <label class="full">이름
         <input type="text" id="pp_name" list="personList" required placeholder="예: 오정화">
@@ -652,7 +652,8 @@
         <input type="text" id="pp_recentIssue" placeholder="예: 최근 이직함, 육아 시작">
       </label>
       <div class="formactions full">
-        <button type="submit" class="stamp-btn">저장</button>
+        <button type="button" class="ghost-btn" id="btnCancelPerson">취소</button>
+        <button type="submit" class="stamp-btn" id="personSubmitBtn">저장</button>
       </div>
     </form>
 
@@ -1822,20 +1823,57 @@
 
   // ---------- people profiles ----------
   var expandedProfiles = {};
+  var editingPersonName = null;
+  var personSubmitBtn = document.getElementById('personSubmitBtn');
+
+  function resetPersonForm(){
+    editingPersonName = null;
+    document.getElementById('personForm').reset();
+    document.getElementById('pp_name').disabled = false;
+    personSubmitBtn.textContent = '저장';
+    document.getElementById('personFormTitle').textContent = '사람별 프로필';
+  }
+
+  function editPerson(name){
+    var p = people.find(function(x){ return x.name===name; }) || {};
+    editingPersonName = name;
+    document.getElementById('pp_name').value = name;
+    document.getElementById('pp_name').disabled = true;
+    document.getElementById('pp_age').value = p.age || '';
+    document.getElementById('pp_anniversary').value = p.anniversary || '';
+    document.getElementById('pp_workplace').value = p.workplace || '';
+    document.getElementById('pp_personality').value = p.personality || '';
+    document.getElementById('pp_recentIssue').value = p.recentIssue || '';
+    personSubmitBtn.textContent = '수정 저장';
+    document.getElementById('personFormTitle').textContent = name+' 프로필 편집';
+    goTab('people');
+    document.getElementById('personForm').scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('pp_recentIssue').focus();
+  }
+
+  document.getElementById('btnCancelPerson').addEventListener('click', resetPersonForm);
 
   document.getElementById('personForm').addEventListener('submit', function(ev){
     ev.preventDefault();
-    var name = document.getElementById('pp_name').value.trim();
+    var name = editingPersonName || document.getElementById('pp_name').value.trim();
     if(!name) return;
+    var existing = people.find(function(p){ return p.name===name; });
     var mmdd = document.getElementById('pp_anniversary').value.trim();
-    upsertPerson(name, {
-      age: document.getElementById('pp_age').value.trim() || null,
-      anniversary: /^\d{2}-\d{2}$/.test(mmdd) ? mmdd : null,
-      workplace: document.getElementById('pp_workplace').value.trim() || null,
-      personality: document.getElementById('pp_personality').value.trim() || null,
-      recentIssue: document.getElementById('pp_recentIssue').value.trim() || null
+    var raw = {
+      age: document.getElementById('pp_age').value.trim(),
+      anniversary: /^\d{2}-\d{2}$/.test(mmdd) ? mmdd : '',
+      workplace: document.getElementById('pp_workplace').value.trim(),
+      personality: document.getElementById('pp_personality').value.trim(),
+      recentIssue: document.getElementById('pp_recentIssue').value.trim()
+    };
+    // 편집 중 빈 칸은 기존 값을 유지하고, 새 프로필의 빈 칸만 null로 저장
+    var fields = {};
+    Object.keys(raw).forEach(function(k){
+      if(raw[k] !== ''){ fields[k] = raw[k]; }
+      else { fields[k] = existing ? (existing[k] != null ? existing[k] : null) : null; }
     });
-    document.getElementById('personForm').reset();
+    upsertPerson(name, fields);
+    resetPersonForm();
   });
 
   function personTimelineHtml(name){
@@ -1886,6 +1924,7 @@
         '<div class="profile-meta"><span class="profile-settlement '+(bal.net>=0?'amt pos':'amt neg')+'">통합 정산 '+sign+won(bal.net)+'</span>'+(reactionLabel?('<span>'+escapeHtml(reactionLabel)+'</span>'):'<span class="hint" style="margin:0;">반응 기록 없음</span>')+'</div>'+
         '<div class="profile-actions">'+
           '<button type="button" class="ghost-btn btn-toggle-timeline">'+(expanded?'이력 접기':'이력 보기')+'</button>'+
+          '<button type="button" class="ghost-btn btn-edit-person">편집</button>'+
         '</div>'+
         (expanded? '<div class="timeline">'+personTimelineHtml(name)+'</div>' : '')+
       '</div>';
@@ -1896,6 +1935,11 @@
         var name = btn.closest('.profile-card').dataset.person;
         expandedProfiles[name] = !expandedProfiles[name];
         renderProfiles();
+      });
+    });
+    list.querySelectorAll('.btn-edit-person').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        editPerson(btn.closest('.profile-card').dataset.person);
       });
     });
   }
